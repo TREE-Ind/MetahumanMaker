@@ -55,7 +55,9 @@ def bind_data(groom,data,source,target,target_transform,groom_transform,target_m
     if np.quantile(sd,.95)>.02 or np.quantile(td,.95)>.005:raise ValueError('Groom scalp correspondence is too uncertain')
     sf=frames(st[sid]);tf=frames(tt[tid]);sa=np.einsum('ni,nij->nj',sb,st[sid]);ta=np.einsum('ni,nij->nj',tb,tt[tid])
     inverse=np.linalg.inv(target_transform);target_local=tt@inverse[:3,:3].T+inverse[:3,3];local_frames=frames(target_local[tid])
-    target_vectors=np.einsum('ij,njk->nik',target_transform[:3,:3],local_frames);delta=groom_transform@inverse
+    target_vectors=np.einsum('ij,njk->nik',target_transform[:3,:3],local_frames)
+    # Bound roots already live on the target skeletal surface. Applying the
+    # scene component's socket transform again displaces facial grooms twice.
     settings={int(s['id']):(i,s) for i,s in enumerate(data.get('group_settings',[]))};records=[];payloads={}
     for group in sorted({int(c['group']) for c in curves}):
         selected=[i for i,c in enumerate(curves) if int(c['group'])==group]
@@ -85,6 +87,17 @@ def bind_data(groom,data,source,target,target_transform,groom_transform,target_m
         material=materials[material_index];scalars={name.casefold():value for name,value in material['scalars'].items()}
         melanin=float(scalars.get('hairmelanin',.5));roughness=float(scalars.get('hairroughness',.5))
         if not 0<=melanin<=1 or not 0<=roughness<=1:raise ValueError('Invalid native hair appearance parameters')
+        vectors={name.casefold():value for name,value in material.get('vectors',{}).items()}
+        direct=vectors.get('color') or vectors.get('basecolor')
+        if direct is not None:color=np.clip(np.asarray(direct[:3],float),0,1)
+        else:
+            # A tinted absorption approximation retains redness and dye;
+            # neutral gray reflectance loses native melanin's brown spectrum.
+            redness=float(np.clip(scalars.get('hairredness',.25),0,1))
+            absorption=(1-redness)*np.array([.506,.841,1.653])+redness*np.array([.343,.733,1.924])
+            concentration=-np.log(max(1-melanin,1e-4))*10
+            color=np.exp(-absorption*concentration)*np.asarray(vectors.get('hairdye',[1,1,1])[:3])*.35
+            color=np.clip(color,.002,1)
         maximum=max(float(np.max(curves[i]['widths'])) for i in selected);points=[];widths=[];curve_records=[];offset=0
         width_scale=float(abs(np.linalg.det(groom_transform[:3,:3]))**(1/3))
         for i in selected:
@@ -94,7 +107,7 @@ def bind_data(groom,data,source,target,target_transform,groom_transform,target_m
             arc=np.concatenate(([0],np.cumsum(np.linalg.norm(np.diff(p,axis=0),axis=1))))
             if arc[-1]<1e-12:raise ValueError('Native groom contains a zero-length rendered strand')
             coord=arc/arc[-1];render_count=int(np.searchsorted(coord,length,side='right'))
-            local=(p-sa[i])@sf[i];bound=local@target_vectors[i].T+ta[i];bound=bound@delta[:3,:3].T+delta[:3,3]
+            local=(p-sa[i])@sf[i];bound=local@target_vectors[i].T+ta[i]
             points.append(((bound-ta[i])@tf[i]).astype('<f4'))
             # UE normalizes radii against the group maximum, not each curve.
             if width is not None:w=w/max(maximum,1e-12)*width
@@ -107,7 +120,7 @@ def bind_data(groom,data,source,target,target_transform,groom_transform,target_m
         slug=re.sub('[^A-Za-z0-9_-]','_',groom['component']);filename=slug+'-'+hashlib.sha256(groom['component'].encode()).hexdigest()[:8]+'-g'+str(group)+'.strands.bin';payloads[filename]=bytes(binary)
         records.append({'name':groom['component'] if len(settings)==1 else groom['component']+' / '+setting.get('name',str(group)),
             'component':groom['component'],'group':group,'file':filename,'layout':layout,'curves':curve_records,'target_material':target_material,
-            'visible':groom.get('visible',True) and length>0,'color':[max(.015,.8*(1-melanin)**3)]*3,'roughness':roughness,
+            'visible':groom.get('visible',True) and length>0,'color':color.tolist(),'roughness':roughness,
             'source_curves':sum(int(c['group'])==group for c in data['curves']),'render_curves':len(selected),'points':offset,
             'source_root_distance_p95_m':float(np.quantile(sd[selected],.95)),'uv_distance_p95':float(np.quantile(td[selected],.95)),
             'width_normalization':'native group maximum','component_settings':copy.deepcopy(overrides),'native_group_settings':copy.deepcopy(setting),

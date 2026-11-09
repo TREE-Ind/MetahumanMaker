@@ -6,7 +6,7 @@
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
   "file_count": 447,
-  "total_bytes": 8787083,
+  "total_bytes": 8788878,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -609,8 +609,8 @@
       "sha256": "52593fcee31448c2c54d5ee97c6d8cb87be94766845d1e3a4c3a8c936b733554"
     },
     "create_metahuman/native_web_grooms.py": {
-      "bytes": 17623,
-      "sha256": "7bf4afce8a87f9bc90c49f2847fb74f15865302432ee1087d8ce9083729a1f67"
+      "bytes": 18462,
+      "sha256": "52b249f4c9a905fc7ba252dcea601fe777ab72747bdf5f2e248a59dca350d086"
     },
     "create_metahuman/native_web_jobs.py": {
       "bytes": 26917,
@@ -621,8 +621,8 @@
       "sha256": "d23f453e53b88039cb87f09585f5e7267bab689be499970ea1eaf3503e785bc9"
     },
     "create_metahuman/native_web_pipeline.py": {
-      "bytes": 8478,
-      "sha256": "955c6db7c6985ea68d561542406a6ad06b2dab419a56d5013b8854223f432a7a"
+      "bytes": 8773,
+      "sha256": "3de7dc0e28f2e4a6d57975b9773927e27c895605776f3a8dec40f99bb2d5e1f0"
     },
     "create_metahuman/neck_color_core.py": {
       "bytes": 4893,
@@ -1301,8 +1301,8 @@
       "sha256": "082345a23407af19be5416e6091dab73b07ef3e99870c751df525bb8801fd6e5"
     },
     "create_metahuman/unreal_groom.py": {
-      "bytes": 39739,
-      "sha256": "4c109c22eabcdb71daf03e00b43fb4a9fc40fdbb53dfb33888656841ebd42c33"
+      "bytes": 40400,
+      "sha256": "2aab87247954792812150469eed1a82bee491beac9edd2b74a6bf66a84497076"
     },
     "create_metahuman/unreal_head_revision.py": {
       "bytes": 20326,

@@ -71,10 +71,11 @@ def copy_binding(binding,groom,target,destination):
     return fresh
 
 
-def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,expected_original,compile_blueprint=True):
+def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,expected_original,compile_blueprint=True,material_overrides=None):
     """Persist a reviewed groom/binding pair on an owned assembled revision.
 
-    Retains the component's material and rendering overrides. Shared original
+    Retains the component's material and rendering overrides unless replacement
+    materials are explicitly supplied. Shared original
     groom, binding and skeletal assets are never edited or saved.
     """
     import unreal
@@ -93,13 +94,18 @@ def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,e
     if not old or old.get_path_name()!=expected_original or not old_binding or old_binding.get_editor_property('target_skeletal_mesh')!=target:
         raise ValueError('The artist groom or its rig changed since this revision was prepared')
     materials=[component.get_material(i) for i in range(component.get_num_materials())]
+    old_overrides=list(component.get_editor_property('override_materials'))
+    if material_overrides is not None and any(not isinstance(m,unreal.MaterialInterface) for m in material_overrides):
+        raise ValueError('Explicit groom materials must be native material interfaces')
     protected={asset.get_path_name().split('.')[0] for asset in (old,old_binding,target)}
     dirty=lambda:{p.get_path_name() for p in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()}
     before=dirty();tag='CreateMetaHuman.GroomRevision.'+component_name;old_tag=library.get_metadata_tag(blueprint,tag)
     try:
         blueprint.modify();component.modify()
         component.set_groom_asset(groom);component.set_binding_asset(binding)
-        if materials!=[component.get_material(i) for i in range(component.get_num_materials())]:raise RuntimeError('Groom revision did not retain component materials')
+        if material_overrides is not None:component.set_editor_property('override_materials',list(material_overrides))
+        expected=materials if material_overrides is None else list(material_overrides)
+        if expected!=[component.get_material(i) for i in range(component.get_num_materials())]:raise RuntimeError('Groom revision did not retain the requested component materials')
         if compile_blueprint:unreal.BlueprintEditorLibrary.compile_blueprint(blueprint)
         if (dirty()-before)&protected:raise RuntimeError('Groom revision unexpectedly dirtied a shared source asset')
         report=dict(status='complete',blueprint=blueprint.get_path_name(),component=component_name,previous_groom=old.get_path_name(),previous_binding=old_binding.get_path_name(),groom=groom.get_path_name(),binding=binding.get_path_name(),target=target.get_path_name(),source_assets_saved=0)
@@ -114,6 +120,7 @@ def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,e
             value=data.get_object(data.get_data(handle))
             if isinstance(value,unreal.GroomComponent) and value.get_name().removesuffix('_GEN_VARIABLE')==component_name:
                 value.set_groom_asset(old);value.set_binding_asset(old_binding)
+                value.set_editor_property('override_materials',old_overrides)
         if compile_blueprint:unreal.BlueprintEditorLibrary.compile_blueprint(blueprint)
         raise
 

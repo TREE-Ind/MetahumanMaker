@@ -26,7 +26,14 @@ def digest(path):
 
 
 def write(path,value):
-    pending=path.with_suffix('.pending');pending.write_text(json.dumps(value,indent=2),encoding='utf-8');pending.replace(path)
+    pending=path.with_suffix('.pending');pending.write_text(json.dumps(value,indent=2),encoding='utf-8')
+    # Windows readers/antivirus can briefly hold the current status file open.
+    # Retain the complete pending record and retry the atomic replacement.
+    for attempt in range(10):
+        try:pending.replace(path);return
+        except PermissionError:
+            if attempt==9:raise
+            time.sleep(.05)
 
 
 class Cancelled(Exception):pass

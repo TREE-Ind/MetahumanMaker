@@ -40,6 +40,8 @@ Retained head and wrinkle layers can follow accepted identity changes through ca
 6. Choose the output resolution. The current 8K learned path accepts 2K/4K inputs or an existing 8K atlas for PiSA-SR; reference surface editing requires a 4K input. Confirm the configured backend's constraints before running it.
 7. Compare the output to the source, inspect seams and repair areas, then coordinate the material maps.
 
+For a broad generative redesign, provide one coherent, UV-matched face atlas to **Generated Albedo**. Preserve the original island layout and facial feature positions, mask protected regions, and inspect the registered atlas before deriving surface maps. Local surface editing adds bounded material detail; it does not give each patch permission to invent another face. The invention budget controls artistic freedom within that spatial constraint.
+
 ![Matched source and generated detail](media/skin-reconstruction.jpg)
 
 **Inferred Relief**, **Derive Skin Material** and **Move Shading into Surface Maps** are art-direction tools. Color-driven relief/material contributions are not measured physical depth or reflectance. Keep accepted sculpt normals where appropriate, and use explicit masks for damaged normal/AO regions. Repaired albedo alone does not automatically rebake all dependent maps.

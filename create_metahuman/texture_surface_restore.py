@@ -60,6 +60,8 @@ def candidate(source,mask,valid,geometry,*,backend,expected,folder,strength=1,
             'Retain the broad complexion and anatomical layout of the reference, but reconstruct damaged '
             'pigment and surface detail. Do not preserve corrupted outlines, smeared creases or baked artifacts. ')
         prompt=('Restore this exact continuous surface patch of skin. '+structure+
+            'This is a magnified material patch, not a complete face or portrait. '
+            'Never add facial features that are absent from the reference patch. '
             'Remove checker patterns and projection smearing. '
             'Flat unlit base color, no new shadows or highlights. Permitted detail: '+brief)
         prior_folder=folder/('surface-prior-'+str(index))
@@ -76,24 +78,27 @@ def candidate(source,mask,valid,geometry,*,backend,expected,folder,strength=1,
         # source constraints just outside a small repair selection otherwise
         # feed contaminated frequencies back through the patch-wide transform.
         if not preserve_structure and invention>=.85:
-            # Explicit creative reconstruction must be allowed to replace bad
-            # pigment, rather than being projected back onto that same pigment.
-            # Match only the patch-wide palette; keep the model's fine detail.
+            # A patch model must never invent independent eyes/noses/mouths.
+            # Full-face pigment replacement uses the registered GENERATIVE
+            # atlas input. Patch invention is limited to material frequencies.
+            from scipy.ndimage import gaussian_filter
             generated=linear(prior)
-            reference=linear(render['color'])
+            reference=linear(context)
             visible=render['valid']>0
             if protected is not None:visible &= protected<.5
             if not np.any(visible):continue
             resized=resize(reference,(generated.shape[1],generated.shape[0]))
-            palette=np.median(reference[visible],axis=0)
-            proposal_palette=np.median(generated.reshape(-1,3),axis=0)
-            gain=np.clip(palette/np.maximum(proposal_palette,.01),.65,1.5)
-            generated=np.clip(generated*gain,0,1)
-            result=np.clip(resized+(generated-resized)*(strength*invention),0,1)
+            log=np.log(np.maximum(generated,.005))
+            detail=log-gaussian_filter(log,(12,12,0))
+            # Bounded multiplicative grain preserves the submitted macro color
+            # and prevents even a bad proposal from painting a second feature.
+            np.clip(detail,-.16,.16,out=detail)
+            base=gaussian_filter(resized,(1.2,1.2,0))
+            result=np.clip(base*np.exp(detail*(strength*invention)),0,1)
             # project() below accepts linear light, unlike restore()'s sRGB.
             projected_color=result
-            info={'method':'GENERATIVE_SURFACE_REPLACEMENT','source_structure_lock':False,
-                  'palette_gain':gain.tolist(),'inferred':True}
+            info={'method':'GENERATIVE_MATERIAL_DETAIL','source_macro_layout_lock':True,
+                  'log_detail_limit':.16,'full_face_replacement_requires_registered_atlas':True,'inferred':True}
         else:
             result,_,info=restore(render['color'],prior,valid=render['valid'].astype(np.float32),
                 protect=protected,strength=strength*invention,detail_limit=.025+.225*invention,

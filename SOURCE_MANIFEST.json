@@ -5,8 +5,8 @@
   "license": "MIT",
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
-  "file_count": 446,
-  "total_bytes": 8779763,
+  "file_count": 447,
+  "total_bytes": 8783096,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -965,8 +965,8 @@
       "sha256": "dec7045cef498b36bfaab9fb05b0bb26d30bd7fba26cc30810dd881914352edc"
     },
     "create_metahuman/skin_reconstruction_worker.py": {
-      "bytes": 33912,
-      "sha256": "ec83d6c4e0f593500d0bd8aca3e0346972877ccd6ede9a9e2ceba4116e71d4d6"
+      "bytes": 33971,
+      "sha256": "5ed1162cdbf13c5300da3840937f181d42c10d8476b1256d6256b795d44ce9ec"
     },
     "create_metahuman/skin_region_continuation.py": {
       "bytes": 4905,
@@ -1168,6 +1168,10 @@
       "bytes": 1590,
       "sha256": "c3b67d752eea79c7686bb734e26cb455bed33e66bfe9135799f354e4e2c00ae2"
     },
+    "create_metahuman/texture_color_harmonize.py": {
+      "bytes": 2466,
+      "sha256": "7a5cc950f0880938cf3757054bbfb6f374e8f9b4a61bc023842f6d56cf78d7ea"
+    },
     "create_metahuman/texture_detail_refine.py": {
       "bytes": 2845,
       "sha256": "39e95231ee51eda80e274fde2243cbaae1c3f6272e475fc54698f472d13fda9a"
@@ -1217,8 +1221,8 @@
       "sha256": "a81a1f0889764f886b71bd52843780421bdbd34d3b2f96a6ba45b8bc2406f28e"
     },
     "create_metahuman/texture_surface_restore.py": {
-      "bytes": 9156,
-      "sha256": "d8a9d67771ef9c19e509fb1588387b04befed02e909929d28296a5d2d56a36d7"
+      "bytes": 9514,
+      "sha256": "728d9479f0365827351a427051cb78db6c35f7f10438fc4d19dfa2c4ae38acaa"
     },
     "create_metahuman/texture_update.py": {
       "bytes": 10300,
@@ -1637,8 +1641,8 @@
       "sha256": "ac3fcd5635b1f6693865c884aea373ffb639d2e1f4e5da2ed38504ebb335c9ce"
     },
     "docs/workflows.md": {
-      "bytes": 8459,
-      "sha256": "d32155975218d5f79b8c28f12a51bd388437ca1bc7e4ee033568b831dbd193d2"
+      "bytes": 8909,
+      "sha256": "7df69f00eddac0182691ae5b81ca7357eff1576a4226bf6b171d4d45f2de6ec8"
     },
     "plugins/CreateMetaHumanBridge/CreateMetaHumanBridge.uplugin": {
       "bytes": 787,

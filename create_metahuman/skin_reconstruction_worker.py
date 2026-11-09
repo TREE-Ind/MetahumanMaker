@@ -483,6 +483,7 @@ def run(request_path,*,owner=None):
     if anatomy_report:files.append('anatomy-protect.png')
     if not reused_normal and ((relief_strength and not steps) or any(step['kind']=='RELIEF' for step in steps)):files.append('relief-mask.png')
     report.update(status='ready', schema=1, seconds=time.monotonic()-started,
+        output_resolution=[color.shape[1],color.shape[0]],
         inputs=request['inputs'], outputs={name:digest(folder/name) for name in files},
         untouched_mask_max_delta=untouched_delta,
         maps_added=(['ALBEDO'] if color_cleanup else [])+(['NORMAL'] if (folder/'candidate-normal.png').is_file() else [])+bloodflow.get('slots',[])+(['ROUGHNESS','CAVITY'] if material_files else []),

@@ -966,7 +966,7 @@
     },
     "create_metahuman/skin_reconstruction_worker.py": {
       "bytes": 33912,
-      "sha256": "6a4ad2fe6f6164ceeca4d1ae29204b45db55102d8cef8dae2716b5ffb6beb411"
+      "sha256": "ec83d6c4e0f593500d0bd8aca3e0346972877ccd6ede9a9e2ceba4116e71d4d6"
     },
     "create_metahuman/skin_region_continuation.py": {
       "bytes": 4905,

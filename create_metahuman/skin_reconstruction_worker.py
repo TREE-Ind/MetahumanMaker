@@ -431,9 +431,9 @@ def run(request_path,*,owner=None):
         # Use the final quantized albedo, matching the actual delivered base.
         # Full albedo resolution avoids the old DEFAULT 512px color bottleneck.
         from surface_maps import tint_bloodflow_in_place,native_expression_color_in_place
+        pixels=linear(np.asarray(Image.open(folder/'candidate-albedo.png').convert('RGB'),dtype=np.float32)/255)
         native_reference=request['inputs'].get('native_expression_'+slot)
         if native_reference:native_expression_color_in_place(pixels,load(folder,native_reference,size))
-        pixels=linear(np.asarray(Image.open(folder/'candidate-albedo.png').convert('RGB'),dtype=np.float32)/255)
         region=load(folder,request['inputs']['bloodflow_'+slot],size).mean(2)
         tint_bloodflow_in_place(pixels,region,float(bloodflow['strength']))
         name='candidate-'+slot+'.png'

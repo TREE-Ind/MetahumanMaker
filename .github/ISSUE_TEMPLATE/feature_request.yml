@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose an artist workflow, agent capability or implementation improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What should become easier?
+      description: Describe the artist or agent workflow and the current obstacle.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include the result you would want to review and keep editing.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Examples or alternatives
+      description: Small redistributable references and practical acceptance criteria are helpful.

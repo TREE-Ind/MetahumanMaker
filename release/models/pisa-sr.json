@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "destination": "models/albedo-superresolution/pisa-sr",
+  "reserve_gib": 24,
+  "assets": [
+    {
+      "file": "base/README.md",
+      "bytes": 12473,
+      "sha256": "28d20df20b26b5bd476370e4bf51832442db701b21a9fa90a62cc4a272d18581",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/README.md"
+    },
+    {
+      "file": "base/model_index.json",
+      "bytes": 543,
+      "sha256": "518553e098fdaa4153d9a92139e344e44f53bb329c22f383293e3099c4f1bad2",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/model_index.json"
+    },
+    {
+      "file": "base/scheduler/scheduler_config.json",
+      "bytes": 346,
+      "sha256": "11ac5627d7df0fa344b875c4b5722b1767a8a2aa1684c2cf8b4d614300127234",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/scheduler/scheduler_config.json"
+    },
+    {
+      "file": "base/tokenizer/tokenizer_config.json",
+      "bytes": 807,
+      "sha256": "d562b18a0c6d32a168fce3d7a342fce64579ebacffb98fb71b0affc494fc32d8",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/tokenizer_config.json"
+    },
+    {
+      "file": "base/tokenizer/special_tokens_map.json",
+      "bytes": 460,
+      "sha256": "f118ab3a983206e4f32583448de6bd6aae4ee21869135cef1f5848a753cdaab6",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/special_tokens_map.json"
+    },
+    {
+      "file": "base/tokenizer/vocab.json",
+      "bytes": 1059962,
+      "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/vocab.json"
+    },
+    {
+      "file": "base/tokenizer/merges.txt",
+      "bytes": 524619,
+      "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/merges.txt"
+    },
+    {
+      "file": "base/text_encoder/config.json",
+      "bytes": 613,
+      "sha256": "7e33bfc475f6cf76e69b28b101993ca834d1f22ff4d35caefde32d63d4f42fba",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/text_encoder/config.json"
+    },
+    {
+      "file": "base/text_encoder/model.fp16.safetensors",
+      "bytes": 680821096,
+      "sha256": "681c555376658c81dc273f2d737a2aeb23ddb6d1d8e5b3a7064636d359a22668",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/text_encoder/model.fp16.safetensors"
+    },
+    {
+      "file": "base/unet/config.json",
+      "bytes": 911,
+      "sha256": "ce0c6d379e3b1d3e1f79338de70c80a1e36f17a6372439a8249b6fb0dfa1b608",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/unet/config.json"
+    },
+    {
+      "file": "base/unet/diffusion_pytorch_model.fp16.safetensors",
+      "bytes": 1731904736,
+      "sha256": "28ec9cf3b239c0751c201b1f6fb46b551df5862731b30a37aa1360101cb3fbab",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/unet/diffusion_pytorch_model.fp16.safetensors"
+    },
+    {
+      "file": "base/vae/config.json",
+      "bytes": 553,
+      "sha256": "424117cb534ce03497c41305ed868980123917b2b6abba4bbaa615e968772903",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/vae/config.json"
+    },
+    {
+      "file": "base/vae/diffusion_pytorch_model.fp16.safetensors",
+      "bytes": 167335342,
+      "sha256": "3e4c08995484ee61270175e9e7a072b66a6e4eeb5f0c266667fe1f45b90daf9a",
+      "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/vae/diffusion_pytorch_model.fp16.safetensors"
+    },
+    {
+      "file": "pisa_sr.pkl",
+      "bytes": 32865445,
+      "sha256": "13502f7bde5e4e585f84f24c3d904d9c848e068bf89f984046fe87da81a391f6",
+      "source": "https://drive.usercontent.google.com/download?id=1PWFM5zUd6lNMOyKX64anvUXhKEOCrf8L&export=download&confirm=t"
+    },
+    {
+      "file": "PiSA-SR-README-9c76e12.md",
+      "bytes": 8437,
+      "sha256": "9f2b75a496edf8a25d6a0836c9edb1ff535f7b90be019625ecaa9102d032dc38",
+      "source": "https://raw.githubusercontent.com/csslc/PiSA-SR/9c76e12e261d1980148738a0cff41e5e27d18c9f/README.md"
+    }
+  ],
+  "manifest": {
+    "schema": 1,
+    "base_repo": "Manojb/stable-diffusion-2-1-base",
+    "base_revision": "0094d483a120f3f33dafbd187ea4aa60d10de75c",
+    "base_license": "CreativeML Open RAIL++-M",
+    "adapter_source": "https://github.com/csslc/PiSA-SR",
+    "adapter_code_revision": "9c76e12e261d1980148738a0cff41e5e27d18c9f",
+    "adapter_license": "Upstream PiSA-SR Apache-2.0 project",
+    "planned_bytes": 2614527906,
+    "assets": [
+      {
+        "file": "base/README.md",
+        "bytes": 12473,
+        "sha256": "28d20df20b26b5bd476370e4bf51832442db701b21a9fa90a62cc4a272d18581",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/README.md"
+      },
+      {
+        "file": "base/model_index.json",
+        "bytes": 543,
+        "sha256": "518553e098fdaa4153d9a92139e344e44f53bb329c22f383293e3099c4f1bad2",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/model_index.json"
+      },
+      {
+        "file": "base/scheduler/scheduler_config.json",
+        "bytes": 346,
+        "sha256": "11ac5627d7df0fa344b875c4b5722b1767a8a2aa1684c2cf8b4d614300127234",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/scheduler/scheduler_config.json"
+      },
+      {
+        "file": "base/tokenizer/tokenizer_config.json",
+        "bytes": 807,
+        "sha256": "d562b18a0c6d32a168fce3d7a342fce64579ebacffb98fb71b0affc494fc32d8",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/tokenizer_config.json"
+      },
+      {
+        "file": "base/tokenizer/special_tokens_map.json",
+        "bytes": 460,
+        "sha256": "f118ab3a983206e4f32583448de6bd6aae4ee21869135cef1f5848a753cdaab6",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/special_tokens_map.json"
+      },
+      {
+        "file": "base/tokenizer/vocab.json",
+        "bytes": 1059962,
+        "sha256": "e089ad92ba36837a0d31433e555c8f45fe601ab5c221d4f607ded32d9f7a4349",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/vocab.json"
+      },
+      {
+        "file": "base/tokenizer/merges.txt",
+        "bytes": 524619,
+        "sha256": "9fd691f7c8039210e0fced15865466c65820d09b63988b0174bfe25de299051a",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/tokenizer/merges.txt"
+      },
+      {
+        "file": "base/text_encoder/config.json",
+        "bytes": 613,
+        "sha256": "7e33bfc475f6cf76e69b28b101993ca834d1f22ff4d35caefde32d63d4f42fba",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/text_encoder/config.json"
+      },
+      {
+        "file": "base/text_encoder/model.fp16.safetensors",
+        "bytes": 680821096,
+        "sha256": "681c555376658c81dc273f2d737a2aeb23ddb6d1d8e5b3a7064636d359a22668",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/text_encoder/model.fp16.safetensors"
+      },
+      {
+        "file": "base/unet/config.json",
+        "bytes": 911,
+        "sha256": "ce0c6d379e3b1d3e1f79338de70c80a1e36f17a6372439a8249b6fb0dfa1b608",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/unet/config.json"
+      },
+      {
+        "file": "base/unet/diffusion_pytorch_model.fp16.safetensors",
+        "bytes": 1731904736,
+        "sha256": "28ec9cf3b239c0751c201b1f6fb46b551df5862731b30a37aa1360101cb3fbab",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/unet/diffusion_pytorch_model.fp16.safetensors"
+      },
+      {
+        "file": "base/vae/config.json",
+        "bytes": 553,
+        "sha256": "424117cb534ce03497c41305ed868980123917b2b6abba4bbaa615e968772903",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/vae/config.json"
+      },
+      {
+        "file": "base/vae/diffusion_pytorch_model.fp16.safetensors",
+        "bytes": 167335342,
+        "sha256": "3e4c08995484ee61270175e9e7a072b66a6e4eeb5f0c266667fe1f45b90daf9a",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/vae/diffusion_pytorch_model.fp16.safetensors"
+      },
+      {
+        "file": "pisa_sr.pkl",
+        "bytes": 32865445,
+        "sha256": "13502f7bde5e4e585f84f24c3d904d9c848e068bf89f984046fe87da81a391f6",
+        "source": "https://drive.usercontent.google.com/download?id=1PWFM5zUd6lNMOyKX64anvUXhKEOCrf8L&export=download&confirm=t"
+      }
+    ],
+    "cuda_or_torch_installed": false,
+    "license_notice": "Author README declares Apache-2.0; pinned tree has no LICENSE file. Base model OpenRAIL++-M terms apply separately; see base/README.md.",
+    "notice_assets": [
+      {
+        "file": "base/README.md",
+        "bytes": 12473,
+        "sha256": "28d20df20b26b5bd476370e4bf51832442db701b21a9fa90a62cc4a272d18581",
+        "source": "https://huggingface.co/Manojb/stable-diffusion-2-1-base/resolve/0094d483a120f3f33dafbd187ea4aa60d10de75c/README.md"
+      },
+      {
+        "file": "PiSA-SR-README-9c76e12.md",
+        "bytes": 8437,
+        "sha256": "9f2b75a496edf8a25d6a0836c9edb1ff535f7b90be019625ecaa9102d032dc38",
+        "source": "https://raw.githubusercontent.com/csslc/PiSA-SR/9c76e12e261d1980148738a0cff41e5e27d18c9f/README.md"
+      }
+    ]
+  }
+}

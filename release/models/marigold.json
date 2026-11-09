@@ -1,0 +1,202 @@
+{
+  "schema": 1,
+  "destination": "models/material-decomposition/marigold-lighting",
+  "reserve_gib": 18,
+  "assets": [
+    {
+      "file": "README.md",
+      "bytes": 6501,
+      "sha256": null,
+      "git_sha1": "f9c88e631221a9a06509ff91b469c46ae9eb812b",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/README.md"
+    },
+    {
+      "file": "model_index.json",
+      "bytes": 857,
+      "sha256": null,
+      "git_sha1": "2288e9e5cda1032fe86a31a98eda012c05256b88",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/model_index.json"
+    },
+    {
+      "file": "scheduler/scheduler_config.json",
+      "bytes": 533,
+      "sha256": null,
+      "git_sha1": "ece79362969e0d8a9ded0333156ba96a0f7c2269",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/scheduler/scheduler_config.json"
+    },
+    {
+      "file": "text_encoder/config.json",
+      "bytes": 633,
+      "sha256": null,
+      "git_sha1": "9c60528fdcb99a7caf834426a94ea13c56cf422b",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/text_encoder/config.json"
+    },
+    {
+      "file": "text_encoder/model.fp16.safetensors",
+      "bytes": 680820392,
+      "sha256": "bc1827c465450322616f06dea41596eac7d493f4e95904dcb51f0fc745c4e13f",
+      "git_sha1": null,
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/text_encoder/model.fp16.safetensors"
+    },
+    {
+      "file": "tokenizer/merges.txt",
+      "bytes": 524619,
+      "sha256": null,
+      "git_sha1": "76e821f1b6f0a9709293c3b6b51ed90980b3166b",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/tokenizer/merges.txt"
+    },
+    {
+      "file": "tokenizer/special_tokens_map.json",
+      "bytes": 460,
+      "sha256": null,
+      "git_sha1": "ae0c5be6f35217e51c4c000fd325d8de0294e99c",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/tokenizer/special_tokens_map.json"
+    },
+    {
+      "file": "tokenizer/tokenizer_config.json",
+      "bytes": 855,
+      "sha256": null,
+      "git_sha1": "bd2abe19377557ff5771584921f9b65fa041fef0",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/tokenizer/tokenizer_config.json"
+    },
+    {
+      "file": "tokenizer/vocab.json",
+      "bytes": 1059962,
+      "sha256": null,
+      "git_sha1": "469be27c5c010538f845f518c4f5e8574c78f7c8",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/tokenizer/vocab.json"
+    },
+    {
+      "file": "unet/config.json",
+      "bytes": 1954,
+      "sha256": null,
+      "git_sha1": "b89addfb3e7c45d8060d0c764457de7304d4f3a5",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/unet/config.json"
+    },
+    {
+      "file": "unet/diffusion_pytorch_model.fp16.safetensors",
+      "bytes": 1732019968,
+      "sha256": "8c2e8da73793181f87c9c7a752a939d6f6834104e9854bf1c53c6b37de3594d9",
+      "git_sha1": null,
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/unet/diffusion_pytorch_model.fp16.safetensors"
+    },
+    {
+      "file": "vae/config.json",
+      "bytes": 711,
+      "sha256": null,
+      "git_sha1": "87cb39197e3d376a794a6b9ae898e39d21de4773",
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/vae/config.json"
+    },
+    {
+      "file": "vae/diffusion_pytorch_model.fp16.safetensors",
+      "bytes": 167335342,
+      "sha256": "3e4c08995484ee61270175e9e7a072b66a6e4eeb5f0c266667fe1f45b90daf9a",
+      "git_sha1": null,
+      "source": "https://huggingface.co/prs-eth/marigold-iid-lighting-v1-1/resolve/08c3930bb641abf786ba44ce92547507ebefbc16/vae/diffusion_pytorch_model.fp16.safetensors"
+    }
+  ],
+  "manifest": {
+    "schema": 1,
+    "repo": "prs-eth/marigold-iid-lighting-v1-1",
+    "revision": "08c3930bb641abf786ba44ce92547507ebefbc16",
+    "license": "openrail++",
+    "files": [
+      {
+        "type": "file",
+        "oid": "f9c88e631221a9a06509ff91b469c46ae9eb812b",
+        "size": 6501,
+        "path": "README.md"
+      },
+      {
+        "type": "file",
+        "oid": "2288e9e5cda1032fe86a31a98eda012c05256b88",
+        "size": 857,
+        "path": "model_index.json"
+      },
+      {
+        "type": "file",
+        "oid": "ece79362969e0d8a9ded0333156ba96a0f7c2269",
+        "size": 533,
+        "path": "scheduler/scheduler_config.json"
+      },
+      {
+        "type": "file",
+        "oid": "9c60528fdcb99a7caf834426a94ea13c56cf422b",
+        "size": 633,
+        "path": "text_encoder/config.json"
+      },
+      {
+        "type": "file",
+        "oid": "a55e85a6b511d04d31fbcc67af976a8b0adf8030",
+        "size": 680820392,
+        "lfs": {
+          "oid": "bc1827c465450322616f06dea41596eac7d493f4e95904dcb51f0fc745c4e13f",
+          "size": 680820392,
+          "pointerSize": 134
+        },
+        "xetHash": "c3592859f5ffe2377cd68e8cf0c26dfe32cd8f20ddf009456e4caefbf2b16157",
+        "path": "text_encoder/model.fp16.safetensors"
+      },
+      {
+        "type": "file",
+        "oid": "76e821f1b6f0a9709293c3b6b51ed90980b3166b",
+        "size": 524619,
+        "path": "tokenizer/merges.txt"
+      },
+      {
+        "type": "file",
+        "oid": "ae0c5be6f35217e51c4c000fd325d8de0294e99c",
+        "size": 460,
+        "path": "tokenizer/special_tokens_map.json"
+      },
+      {
+        "type": "file",
+        "oid": "bd2abe19377557ff5771584921f9b65fa041fef0",
+        "size": 855,
+        "path": "tokenizer/tokenizer_config.json"
+      },
+      {
+        "type": "file",
+        "oid": "469be27c5c010538f845f518c4f5e8574c78f7c8",
+        "size": 1059962,
+        "path": "tokenizer/vocab.json"
+      },
+      {
+        "type": "file",
+        "oid": "b89addfb3e7c45d8060d0c764457de7304d4f3a5",
+        "size": 1954,
+        "path": "unet/config.json"
+      },
+      {
+        "type": "file",
+        "oid": "7570f90c9a1dbc66efaa20a8cff8a31b813a411f",
+        "size": 1732019968,
+        "lfs": {
+          "oid": "8c2e8da73793181f87c9c7a752a939d6f6834104e9854bf1c53c6b37de3594d9",
+          "size": 1732019968,
+          "pointerSize": 135
+        },
+        "xetHash": "936668658016bb0a43eb14c82e1e6e91aca2084f968edb51877b267b36c645e1",
+        "path": "unet/diffusion_pytorch_model.fp16.safetensors"
+      },
+      {
+        "type": "file",
+        "oid": "87cb39197e3d376a794a6b9ae898e39d21de4773",
+        "size": 711,
+        "path": "vae/config.json"
+      },
+      {
+        "type": "file",
+        "oid": "9a75e3c8e7cf4387be816cdebb751fbd5fc4e1e2",
+        "size": 167335342,
+        "lfs": {
+          "oid": "3e4c08995484ee61270175e9e7a072b66a6e4eeb5f0c266667fe1f45b90daf9a",
+          "size": 167335342,
+          "pointerSize": 134
+        },
+        "xetHash": "2918df6c565e5f834baea51ba7e271ab388fe23123d42e5f317a95fec14a228c",
+        "path": "vae/diffusion_pytorch_model.fp16.safetensors"
+      }
+    ]
+  }
+}

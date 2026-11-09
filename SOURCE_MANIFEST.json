@@ -1,0 +1,1809 @@
+{
+  "schema": 1,
+  "project": "MetaHuman Maker",
+  "version": "0.346.0",
+  "license": "MIT",
+  "text_normalization": "LF for public text; vendored viewer bytes retained",
+  "scope": "Original project code; separately licensed dependencies retain their notices",
+  "file_count": 444,
+  "total_bytes": 8763150,
+  "files": {
+    ".editorconfig": {
+      "bytes": 265,
+      "sha256": "1741325c695b1707be432dda29ab17f3089883bac4edd91c32ac9979fdfcddd9"
+    },
+    ".gitattributes": {
+      "bytes": 276,
+      "sha256": "75e59810026b3a99578923d69a0da502d2810f63d698c08bc44dbdb9cea918fc"
+    },
+    ".github/ISSUE_TEMPLATE/bug_report.yml": {
+      "bytes": 1176,
+      "sha256": "1a9f93b9cbdf64a3b0544bbfa164ae34acab4ca411b9ba853e6a445b5870283d"
+    },
+    ".github/ISSUE_TEMPLATE/config.yml": {
+      "bytes": 28,
+      "sha256": "1f103c6a9dd07cd13a9a6f17ace6b813f47747eb9cb7e00488cb2073caaf91bb"
+    },
+    ".github/ISSUE_TEMPLATE/feature_request.yml": {
+      "bytes": 742,
+      "sha256": "5064b710dd3010176a1af5287bb6375f73821a3afb74e8e1218e82518f33374c"
+    },
+    ".github/pull_request_template.md": {
+      "bytes": 282,
+      "sha256": "847dbe7ea008deb6ab2250acd6fd7a89285081b1bef26a399db5ffc8e4b73359"
+    },
+    ".github/workflows/source-checks.yml": {
+      "bytes": 661,
+      "sha256": "4ef85e6ef755885c05badf8a9581ee5af83064f16be1f58f8d56246d9d1ec641"
+    },
+    ".gitignore": {
+      "bytes": 1827,
+      "sha256": "c8349a197964d92f5ca7f1575beb16083a67c87f6f1440efa7dd9275a45aa030"
+    },
+    "CODE_OF_CONDUCT.md": {
+      "bytes": 747,
+      "sha256": "1387c7e07e77e15184594088cf261209c223d783345961bbdeca8bfacb7cb9b8"
+    },
+    "CONTRIBUTING.md": {
+      "bytes": 1960,
+      "sha256": "10f6ea3c5a50a644e44c127db6a9b817ea2ed02211116d2d1454851e8fe1eb2b"
+    },
+    "LICENSE": {
+      "bytes": 1085,
+      "sha256": "02a95a3370ebd254be2d65d36897d4070b31d16a5b6cc18a67f2503fd0520b01"
+    },
+    "README.md": {
+      "bytes": 10446,
+      "sha256": "bf35b4efc7056a6c4c919c4dd4f857fece2745a98245f7fdfba183f175d610a5"
+    },
+    "SECURITY.md": {
+      "bytes": 1128,
+      "sha256": "572ef8ad3eb5f131afc4ab8f1d0798e6e291f984d87991cceceea50335efce14"
+    },
+    "THIRD_PARTY_NOTICES.md": {
+      "bytes": 2003,
+      "sha256": "2660e472de9d3c269bdaab70535a8c9e4711b74771978d934a4d07983d48fe84"
+    },
+    "create_metahuman/LICENSE": {
+      "bytes": 1085,
+      "sha256": "02a95a3370ebd254be2d65d36897d4070b31d16a5b6cc18a67f2503fd0520b01"
+    },
+    "create_metahuman/THIRD_PARTY_NOTICES.md": {
+      "bytes": 2003,
+      "sha256": "2660e472de9d3c269bdaab70535a8c9e4711b74771978d934a4d07983d48fe84"
+    },
+    "create_metahuman/__init__.py": {
+      "bytes": 41159,
+      "sha256": "af9a8c0374d322c72b48ad711fde44bd4b6b0cd1e1ea1bf525f5318eefac460f"
+    },
+    "create_metahuman/accurate_surface.py": {
+      "bytes": 12807,
+      "sha256": "b4dd32b08176a26e8b145e211b7063bb8f342553377ad2a61f9f46fac4b0465a"
+    },
+    "create_metahuman/anatomical_refinement.py": {
+      "bytes": 20994,
+      "sha256": "463b8f43b083f463b9d15718baf328a46d788f1e11dfaec4a824ec6fdcd85eb0"
+    },
+    "create_metahuman/anatomy.py": {
+      "bytes": 6686,
+      "sha256": "e4ca34fbf1730b31a5e0f49493a7770094f3426640884c0f765ccd5de3dfdd5e"
+    },
+    "create_metahuman/animated_regions.py": {
+      "bytes": 2130,
+      "sha256": "dab2548a35221ba846fb0cc4886beb33d04a0db7a1ffff195c41d14243890e8e"
+    },
+    "create_metahuman/artist_state.py": {
+      "bytes": 6032,
+      "sha256": "2f29867b207d9a3241c1a1f68d19a7f52df1b7ee7185d8b8ce6206ab0d492bb2"
+    },
+    "create_metahuman/attachment_alignment.py": {
+      "bytes": 15539,
+      "sha256": "36cefa10bc77691a2e61d57b2a0c68681d7320bfdc34292d525b7e0824c2ed1b"
+    },
+    "create_metahuman/auto_wrap_jobs.py": {
+      "bytes": 16896,
+      "sha256": "6ee97f4aa1745b9ab64f95b87b2a04f762d3f467b9b0c890786e247111172bdd"
+    },
+    "create_metahuman/auto_wrap_worker.py": {
+      "bytes": 2147,
+      "sha256": "98446359d1eaf3f641c05ca0d2cf445eec8d24ed3010fed818fea193b1ffdd0c"
+    },
+    "create_metahuman/automation.py": {
+      "bytes": 12536,
+      "sha256": "f2e06468c982777d1b8afad3d3f7c6eae3475c869e18d9ebe571e13edf036653"
+    },
+    "create_metahuman/bake_external.py": {
+      "bytes": 6387,
+      "sha256": "b74b6938e344e8f58b86e44116a2c16a18e31256ee0fe8dd0829d106cc788543"
+    },
+    "create_metahuman/bake_jobs.py": {
+      "bytes": 28835,
+      "sha256": "23650b073f78f925539e40fbab5acaf7f6515cc1e55ebfa814681978a5fdd5cb"
+    },
+    "create_metahuman/bake_material_scope.py": {
+      "bytes": 3014,
+      "sha256": "da35afed50890abd249000ee2e66875e984f070a6f9d22a4ea35161c87252440"
+    },
+    "create_metahuman/bake_tiles.py": {
+      "bytes": 5975,
+      "sha256": "171afedb410c7889fa5e70a3e9ca30acc1e4d5721f7dcd82cc9ffcbc4ab695b8"
+    },
+    "create_metahuman/bake_worker.py": {
+      "bytes": 3451,
+      "sha256": "4dde8a9a7ac2f6634da8690d820335f60f7ea89f599a1ada9f7dacbf71999ab9"
+    },
+    "create_metahuman/blender_compat.py": {
+      "bytes": 1704,
+      "sha256": "c5e1f2d61419ab4cc168787c4e4393dc275e6645598a756254695c0b157f0583"
+    },
+    "create_metahuman/body_ipc.py": {
+      "bytes": 657,
+      "sha256": "53e33ad719660f0fd6442af8cfce9d544cbd69c71cb8e7404aaf685d3b8c51bc"
+    },
+    "create_metahuman/body_library.py": {
+      "bytes": 4696,
+      "sha256": "59dfbd3f8cb58ffcbaa7cfe7e07c803effbf0f1ea4a668af2d20d593cff7f5ac"
+    },
+    "create_metahuman/body_pose.py": {
+      "bytes": 23336,
+      "sha256": "894cf83cc14619afc699d06744f952121de49268064dee7238ae78100f4f4102"
+    },
+    "create_metahuman/body_posture.py": {
+      "bytes": 3752,
+      "sha256": "0313e55d964513b193349a7bc59a67407efc814c38331502b449e5d4a471b247"
+    },
+    "create_metahuman/body_regions.py": {
+      "bytes": 16401,
+      "sha256": "c888afa325229ce7fb0a12e31cd02d7859b698a7173edfb84d71929113c4265a"
+    },
+    "create_metahuman/body_shoulders.py": {
+      "bytes": 2809,
+      "sha256": "07ad11cb304d35df6f0735bf301e5ee60510a3c3d49630ed5d3941e4669e00c4"
+    },
+    "create_metahuman/bridge.py": {
+      "bytes": 9428,
+      "sha256": "00d2c1ff3c3cd5bd4b1ee37a3b04fa617261ee444679e0e67dcced6e7e5e1035"
+    },
+    "create_metahuman/buffer_digest.py": {
+      "bytes": 2617,
+      "sha256": "7a70baecbda07b87b25a07fd175159692b14bf6ad4c82490a18f82ba57d531ff"
+    },
+    "create_metahuman/calibration_math.py": {
+      "bytes": 3983,
+      "sha256": "9bb5b33651ea5250479a48250a6cb053a67dc6c9b10e82e924e87cd3aa9d5699"
+    },
+    "create_metahuman/capture_storage.py": {
+      "bytes": 2257,
+      "sha256": "091ca023a5714253ed26a3cff2c48de049fc402046dd6ee8904d080805643203"
+    },
+    "create_metahuman/character_project.py": {
+      "bytes": 11390,
+      "sha256": "e81dc4c5beb63fc0cb535e85e6aa82348275b7084100040ece2f100d11d43b74"
+    },
+    "create_metahuman/character_skin.py": {
+      "bytes": 18179,
+      "sha256": "8bcde17d34016d559d3d8812101757b688734329c7f5f35271f7beb9b8267b95"
+    },
+    "create_metahuman/chart_boundary.py": {
+      "bytes": 1868,
+      "sha256": "534ced91c1e83c7371473c37d93b91fce11d23a08406bff6d3fc93432185de0a"
+    },
+    "create_metahuman/chart_cut.py": {
+      "bytes": 4223,
+      "sha256": "31be57b0003f6a4478e663119a22efdff0116e85b58143b089e719875301cb87"
+    },
+    "create_metahuman/chart_domain.py": {
+      "bytes": 3045,
+      "sha256": "94faca54668be5345d43636346e8770bf5b62d154ac828d995f16a1076ec1b06"
+    },
+    "create_metahuman/chart_reverse_projection.py": {
+      "bytes": 4787,
+      "sha256": "02449630baa7500167472a6481d2a705ae4065864405d4e63bb1d1d1279aa697"
+    },
+    "create_metahuman/color_completion_worker.py": {
+      "bytes": 6510,
+      "sha256": "982f12483b4022b9ef52f587329b4d4809534fa1fc54606864d382526cf11bc4"
+    },
+    "create_metahuman/compare_views.py": {
+      "bytes": 22457,
+      "sha256": "de963752a7040e9b1b1636b3d0d8391a879e303925ad5e478299d6fc6f93b98d"
+    },
+    "create_metahuman/conform_geometry.py": {
+      "bytes": 5347,
+      "sha256": "8a651b9d0d1a26525f9a18d7f78e0ba055eecc6394e62960087b7194eedaafe5"
+    },
+    "create_metahuman/constrained_surface_fit.py": {
+      "bytes": 52729,
+      "sha256": "78429dd5c3f721d27fdaf1055ec54b237dd8cade422d9c33803da06e17d7ff6d"
+    },
+    "create_metahuman/convex_surface_step.py": {
+      "bytes": 19904,
+      "sha256": "b4a3b8b87051ddccb71002f88d2c021a2bd145428c738a4c8544328861e30974"
+    },
+    "create_metahuman/detail_jobs.py": {
+      "bytes": 24690,
+      "sha256": "58999e34b02b1574c2d95b39bae0c7cfc0a0e9597eacb4bc34031702470110cd"
+    },
+    "create_metahuman/detail_layers.py": {
+      "bytes": 15144,
+      "sha256": "7621621857646d6a29dfbacc07a6feb59b061b91ca034cf211daf2cbd9bcce2d"
+    },
+    "create_metahuman/detail_mask.py": {
+      "bytes": 11235,
+      "sha256": "0dc5721421c6538e60f29764c1d16a8f02c50a218f1fa263fa9323623eac93a0"
+    },
+    "create_metahuman/detail_recovery.py": {
+      "bytes": 9339,
+      "sha256": "7fb6d41854fb796bac5f72c52b793fcdc701c083d0619848adf850f89f9454d4"
+    },
+    "create_metahuman/detail_subdivision.py": {
+      "bytes": 10749,
+      "sha256": "26a67e9a22275422ff8263402d9768afc2919f0784424bcbcfc55e56b3789f70"
+    },
+    "create_metahuman/detail_worker.py": {
+      "bytes": 9809,
+      "sha256": "3e95b8fef0f31904f08e3df98fdcf88ce92f8b98e2c4823b3e014303d6d9f897"
+    },
+    "create_metahuman/detect_worker.py": {
+      "bytes": 2283,
+      "sha256": "d891d3cfbf6717121cb838fa6ef7b3181a337b50cde3a395abf93177efd36c5b"
+    },
+    "create_metahuman/ear_fit.py": {
+      "bytes": 4962,
+      "sha256": "834187f14066b2c75ad760700bc1e277afac5733211462b5724d6aeabbab25e8"
+    },
+    "create_metahuman/ear_surface.py": {
+      "bytes": 7504,
+      "sha256": "b0de76593fc867e9b6b197a9c84de48096dd44e4bb8c9e1561caa1b56191848a"
+    },
+    "create_metahuman/export_delivery.py": {
+      "bytes": 4939,
+      "sha256": "71b92a06f686aa0ad492932369d9d43274a98a8f14ffb01848058d53bace1e76"
+    },
+    "create_metahuman/expression_controls.py": {
+      "bytes": 5999,
+      "sha256": "a1a124ed4b15abf7eca6000e05e2d0ec53e3605cd9b8daa9a18c7eac47dd9b8d"
+    },
+    "create_metahuman/expression_maps.py": {
+      "bytes": 10566,
+      "sha256": "015755cb722121405f29ab9b9b24cf8dee05d7ba7d7e5019b35413d81458a972"
+    },
+    "create_metahuman/expression_worker.py": {
+      "bytes": 6482,
+      "sha256": "de6eaf6b32e2d721313389cf9080004554d43ffb59886886da830c5637d2726f"
+    },
+    "create_metahuman/expressions.py": {
+      "bytes": 38582,
+      "sha256": "0a2423892b84ab7b8a54423f3ddff725e22329edb0f465c2ee3750cd192bc0f2"
+    },
+    "create_metahuman/eye_appearance.py": {
+      "bytes": 10675,
+      "sha256": "bc1a4e1a0ad5dc559c78180dd38bcfba7d1bdb1819a17ee4d9b34c12f7b99414"
+    },
+    "create_metahuman/eye_color_core.py": {
+      "bytes": 13083,
+      "sha256": "db7ac7f6d735e67c35646d3458b61720a404199f3661a382d77d1153ad57c068"
+    },
+    "create_metahuman/eye_color_jobs.py": {
+      "bytes": 18986,
+      "sha256": "678d9f8f69e20224c925d8923e6f5ea72f122fe5984ebcb42236fa5348296625"
+    },
+    "create_metahuman/eye_color_worker.py": {
+      "bytes": 2542,
+      "sha256": "bd918aacadd276c0eaac800e64d901e50e047e017a95189369c5752469fd01ea"
+    },
+    "create_metahuman/eye_fit_jobs.py": {
+      "bytes": 22682,
+      "sha256": "7264b5624e68ff54c1a45357748434d585422331f9c7a6fec8f2dccea3f8c1c7"
+    },
+    "create_metahuman/face_mixer.py": {
+      "bytes": 9037,
+      "sha256": "fddf7a826e76a3443b12917663f9f4a98e4514d99723dcb8a1017d87044475a4"
+    },
+    "create_metahuman/features.py": {
+      "bytes": 87707,
+      "sha256": "ee4857c4765a5d2cc243fe2efd5daeda667a7b4fe37c5750b56d89c3830b69e1"
+    },
+    "create_metahuman/following_source_field.py": {
+      "bytes": 11675,
+      "sha256": "8056176da5ed647882fdfc997d90b83fcd710853263f9c2c9411d157f94e6ab2"
+    },
+    "create_metahuman/generated_coverage.py": {
+      "bytes": 2007,
+      "sha256": "245e2b2c140b7bed486f6900cb6a651e04fcfed5b110e50a76d9a54c94a850dc"
+    },
+    "create_metahuman/geometry.py": {
+      "bytes": 13826,
+      "sha256": "bf509f24788bbe22e79c5915e79ecc84e2031661c47b06c509ddc0bf7220b16e"
+    },
+    "create_metahuman/global_registration.py": {
+      "bytes": 19867,
+      "sha256": "e2c73d7f7c79a87b87834696356e2ba9529661ec0f2bfd10dede077e6e92c1af"
+    },
+    "create_metahuman/groom_alembic.py": {
+      "bytes": 4948,
+      "sha256": "3b246a1dc1ac6d9de717806ec71b73ccfd692ade3640235f46674b4c5edbf302"
+    },
+    "create_metahuman/groom_binding.py": {
+      "bytes": 4108,
+      "sha256": "9ff497a03e843aa2a2f58f3c5a102ec4ea29eee8be35edb3a991dff6203af290"
+    },
+    "create_metahuman/groom_follow.py": {
+      "bytes": 7919,
+      "sha256": "8953d8f721bfd69c81d85ae17f8461f652978306d949bc4721d242e6f6f14eb6"
+    },
+    "create_metahuman/groom_jobs.py": {
+      "bytes": 20723,
+      "sha256": "916e172dc0d5b4ff08acb37cbdc8fc8ca2ab9d18d310003afc3d481360a6a057"
+    },
+    "create_metahuman/groom_lid_fit.py": {
+      "bytes": 5128,
+      "sha256": "cefb5d5a1afe3e80149c929cebf97cde5bebf82cf79139824e2d9138c2a49566"
+    },
+    "create_metahuman/groom_regions.py": {
+      "bytes": 3428,
+      "sha256": "966b59b36b5f218fe0f3008b1f517e8996e6da66c2bc13155a1de5c24a60413f"
+    },
+    "create_metahuman/grooming.py": {
+      "bytes": 53327,
+      "sha256": "2e9f3b9dd158c2e4069226412521148fc933ccbbd5c76d96bbb19aa1bd3df984"
+    },
+    "create_metahuman/guided.py": {
+      "bytes": 105494,
+      "sha256": "5481bb2844b2b8ae83fa39b27ec2386eaff62f64b90562f1bcb86f9e97c3f367"
+    },
+    "create_metahuman/head_model.py": {
+      "bytes": 18340,
+      "sha256": "c892ad4c53a0db6b145124a971e7ddfa5b593454c0881524390f2b07c37d4a06"
+    },
+    "create_metahuman/head_revision.py": {
+      "bytes": 11861,
+      "sha256": "a99bf6ef9516367b5e8febd24b3990bc47d3547910d9f9b511e940823bb1b183"
+    },
+    "create_metahuman/intrinsic_attachment_fit.py": {
+      "bytes": 36749,
+      "sha256": "4cb25c995b033613696b6268c1d62e751f2d01abeffe26897e26844f481bf54d"
+    },
+    "create_metahuman/intrinsic_disk.py": {
+      "bytes": 17415,
+      "sha256": "59ee99b0da74f6f9c1191fe5b634ba1fc5769af39b8bb4d8a4c9c91e6fb92494"
+    },
+    "create_metahuman/intrinsic_surface.py": {
+      "bytes": 2751,
+      "sha256": "2f15cf70182cab4325005723aad0be4ee4e289c57739fcf25f96fdea6f4a7152"
+    },
+    "create_metahuman/joint_wrap.py": {
+      "bytes": 17095,
+      "sha256": "f11f31c5db67325de1baff64d51d0e611f448f625844612e69ff7709b6ecc165"
+    },
+    "create_metahuman/landmark_flow.py": {
+      "bytes": 3495,
+      "sha256": "c60ba099e5c448edeb88fa73d626a88de0e74e8845a66b5f1649120f511ca8b3"
+    },
+    "create_metahuman/landmark_tools.py": {
+      "bytes": 15704,
+      "sha256": "11a06c7a66875f52bb98573d6ec3a8a05fe6fc5dc4cf9ac729d2b5b66857dd56"
+    },
+    "create_metahuman/lash_fit_worker.py": {
+      "bytes": 5783,
+      "sha256": "c4ca85acf2fffbd71ed246677d0a114ce62f8cb6ab4fd7cdd0bbf7683a0040e9"
+    },
+    "create_metahuman/lid_calibration.py": {
+      "bytes": 8154,
+      "sha256": "18998d91487e1c8d58dd654a1a3d1362f384f56ae1e5f56330b8d4832d020312"
+    },
+    "create_metahuman/lid_calibration_worker.py": {
+      "bytes": 1813,
+      "sha256": "44b34c4fcc6a175451e35250a825b44a90e4155b043f49c8276c4621fc36e4a8"
+    },
+    "create_metahuman/lid_surface_repair.py": {
+      "bytes": 30231,
+      "sha256": "717f4ba69f4d1b7c0dbf5073c4cff79b5c68d9c98f5eb73c3045d206be3682f6"
+    },
+    "create_metahuman/local_surface_projection.py": {
+      "bytes": 7921,
+      "sha256": "d82ff212d976bc1e4b271792c99232b1dc68e018253d620386dd65e23d834c21"
+    },
+    "create_metahuman/lod_lid_contact.py": {
+      "bytes": 2479,
+      "sha256": "c9d40ab50948bd96bab3229311df903cf77dc84d60d9d297de8a8e406f5ea8b0"
+    },
+    "create_metahuman/lod_seam_curves.py": {
+      "bytes": 7616,
+      "sha256": "f65fede2acd36ac7e9000074b8a7c10b12d1eb436ad7cad620d62e14ff1e7c9d"
+    },
+    "create_metahuman/lod_surface_transfer.py": {
+      "bytes": 12697,
+      "sha256": "bd3ead29f67cab0885ba0c36fc058273ee747f900500e7ae6218884f67ba0c71"
+    },
+    "create_metahuman/lookdev.py": {
+      "bytes": 24893,
+      "sha256": "e350d5df6caf33be25c8ed530c5327f90cf820540151218dc4f47f9ec809ee3c"
+    },
+    "create_metahuman/map_provenance.py": {
+      "bytes": 25791,
+      "sha256": "13f14fa01957b63d1d10521dd973111ac160ead30ad6500121be789ad5a07da2"
+    },
+    "create_metahuman/mesh_ops.py": {
+      "bytes": 59706,
+      "sha256": "dd0bc6849e0caed3bc7bf3563ef6d99fc77b43f74b2b5f945ddfa00d942cbf21"
+    },
+    "create_metahuman/motion_contact.py": {
+      "bytes": 5519,
+      "sha256": "b3a8c41e197c69b83dea4453ac6139f8ffd673646f2ff40e8875a7669dfaf2c9"
+    },
+    "create_metahuman/native/LICENSE-Alembic.txt": {
+      "bytes": 4893,
+      "sha256": "00a7b288ee40635e15adf85703b0fb3be3ef2f3000beb74d21c1f19b19147906"
+    },
+    "create_metahuman/native/LICENSE-Imath.txt": {
+      "bytes": 1497,
+      "sha256": "c20236d3b39fd20eba8e3d1fb3b892a5483df2e7d8d61bf43f165d3fac22f601"
+    },
+    "create_metahuman/native/README.md": {
+      "bytes": 939,
+      "sha256": "ebb6bd5e1c30d0eca36814bff5ef2497ae7766c4c3714bf3635c396e586d68e8"
+    },
+    "create_metahuman/native/groom_alembic_writer.cpp": {
+      "bytes": 5299,
+      "sha256": "d20bce8f79e3ac9c2c4ef28250a7a5cb2e0a25422d2f29fec8c111b82d079e54"
+    },
+    "create_metahuman/native_albedo_update.py": {
+      "bytes": 7317,
+      "sha256": "1c0741cdf88833e2c4fe8e4e41f8dcb8a8c3349b32ddc1348385d610ee0bd5cf"
+    },
+    "create_metahuman/native_animated_worker.py": {
+      "bytes": 3543,
+      "sha256": "a6a71173391015f1f5ad08bf07c4e6d1e99e6dd07c2aee16ee89a94ccf8aed6a"
+    },
+    "create_metahuman/native_body.py": {
+      "bytes": 19589,
+      "sha256": "beb93491bd7d4a7179d4999bc65668891051a26afe532f082bf421fa9b890147"
+    },
+    "create_metahuman/native_body_server.py": {
+      "bytes": 3426,
+      "sha256": "7f0de2de90f3d643a38a919ada20c43b11367bc02577298d23499f54f6b2710e"
+    },
+    "create_metahuman/native_corrective_gates.py": {
+      "bytes": 19135,
+      "sha256": "f684b49f800796bbbdb64ab795b3a847a662e6440a5b5e1440c080eb6662f563"
+    },
+    "create_metahuman/native_expression_cleanup.py": {
+      "bytes": 11552,
+      "sha256": "5fdaccad7175958597a414772f3da20174fa17767e5f93e7ed170e3ca1e6d0e4"
+    },
+    "create_metahuman/native_eye_update.py": {
+      "bytes": 7756,
+      "sha256": "4d836baf49d1bdc5697991cbed02b724052ba37c021ded4c166b2a981a4c13c7"
+    },
+    "create_metahuman/native_face_mixer.py": {
+      "bytes": 8939,
+      "sha256": "42809743e198ec24216ab4c92575b3af337d59a6ba6f9ab892f84153db3fe637"
+    },
+    "create_metahuman/native_face_recipes.py": {
+      "bytes": 1449,
+      "sha256": "1740c38ebc2956837d47204b219dce7acffce9743bed6accf1b8c97cddbfab82"
+    },
+    "create_metahuman/native_face_review.py": {
+      "bytes": 40776,
+      "sha256": "7b0053c398e727ea34ddab11eb4da5cb28bb1edac233861805080e0b688feb24"
+    },
+    "create_metahuman/native_fit_step.py": {
+      "bytes": 3615,
+      "sha256": "3c61d57f1802d5194f166e732f32a250be615f557154d117a4eb85af8998d31a"
+    },
+    "create_metahuman/native_gaze_interaction.py": {
+      "bytes": 14174,
+      "sha256": "e351997fb991f2df5446b7f5b0b031fc9d9768175d50c192cbcdf4f3799339aa"
+    },
+    "create_metahuman/native_geometry_state.py": {
+      "bytes": 2628,
+      "sha256": "2c74d1b9d4aca14347d4ea22ea6542d82157443b40907f7b4922cd46627de9fe"
+    },
+    "create_metahuman/native_globe_gaze.py": {
+      "bytes": 16174,
+      "sha256": "88a44dfbcc02ceb9ae62e219c0a947caf4a37a2fa5c18ef87ad74ba7ec007f21"
+    },
+    "create_metahuman/native_globe_rigidity.py": {
+      "bytes": 4376,
+      "sha256": "b06c59e3c216d9b8d30a1c0da0a8388428e23be6b78a72c219437547cf7c9425"
+    },
+    "create_metahuman/native_interval_fields.py": {
+      "bytes": 5717,
+      "sha256": "8ebaf8b7a7a98acddcce6da12fa689b2eb7ab170b310f1a0d6830d093c7ca886"
+    },
+    "create_metahuman/native_lid_anatomy.py": {
+      "bytes": 6004,
+      "sha256": "97c6541c2b0a4db45b9d5dbe33b989e9e8f67499f26423cecf004c11db4153de"
+    },
+    "create_metahuman/native_lid_contact.py": {
+      "bytes": 17878,
+      "sha256": "877965150b8f54b3c2c1b8d2e8ecbf20a44efda046ddca64047a2c6006e5cf97"
+    },
+    "create_metahuman/native_lid_interaction.py": {
+      "bytes": 13126,
+      "sha256": "74b5976667e72533029ef41f315e3ea236621822e0e8c3e9b88af096cfd6cd1a"
+    },
+    "create_metahuman/native_lid_repair_bank.py": {
+      "bytes": 15010,
+      "sha256": "e84fff78dad66e0f320a3b9f1fabec0179f6193b9154d45f0e5e39ca6f5ceae5"
+    },
+    "create_metahuman/native_lod_correctives.py": {
+      "bytes": 7234,
+      "sha256": "7e86590827cfd0e1ea84abf0652d7c9229b7a779114b9908aad005eaa70ca5d4"
+    },
+    "create_metahuman/native_lod_lid_refiner.py": {
+      "bytes": 4379,
+      "sha256": "24b1df80c0b6667750ff182a56260440cccbb4b2bdc7f43233196caabbca3251"
+    },
+    "create_metahuman/native_lod_pose_calibration.py": {
+      "bytes": 9541,
+      "sha256": "b30af32c5ef93ff394805ef4230bf855beb0f5af083bc0722193c955f01ea546"
+    },
+    "create_metahuman/native_lod_pose_review.py": {
+      "bytes": 4424,
+      "sha256": "d8d115597e1056572869b361b55a4ba95ab28cc8fb7cbe25ab81d0332580bb27"
+    },
+    "create_metahuman/native_map_update.py": {
+      "bytes": 2497,
+      "sha256": "8ea4f99cd34418a428db19d3be056485518c9ce0c2b24028265be4042f69ae63"
+    },
+    "create_metahuman/native_neutral_lid_fit.py": {
+      "bytes": 11894,
+      "sha256": "8a272a1e69d1b693b9dd3722a9aa4f36636f294bb65114514a0b33edf7ad12ab"
+    },
+    "create_metahuman/native_pose_bank.py": {
+      "bytes": 11518,
+      "sha256": "c07e8284724222a00058ddf20099ea740717211a40035fa6dfc7634ca11c4465"
+    },
+    "create_metahuman/native_pose_sculpt.py": {
+      "bytes": 17329,
+      "sha256": "1260d2bb85ff52f19ab07766faff64dc1da2b0ccf5e7595e1b111032dbf39154"
+    },
+    "create_metahuman/native_pose_sculpt_solver.py": {
+      "bytes": 14848,
+      "sha256": "c80ebbfaa524f816ea5e50213856457a6f38b570b966d206f08b4906094c22a4"
+    },
+    "create_metahuman/native_return.py": {
+      "bytes": 12529,
+      "sha256": "91ebf79be137acdcc9265036538631cd64bb7bbce1d99f57151118daeaf29ef8"
+    },
+    "create_metahuman/native_sculpt_scope.py": {
+      "bytes": 2443,
+      "sha256": "8ecf2a580a55337f3b8e915f8d6d2efd149e94f0778fbb708cd8c4b0f4350f16"
+    },
+    "create_metahuman/native_skin_motion.py": {
+      "bytes": 4525,
+      "sha256": "cc2d5ffb0d43cfd646f774aaa7b2e916d6bbe437643d16bd867f1d32c4835866"
+    },
+    "create_metahuman/native_storage.py": {
+      "bytes": 4678,
+      "sha256": "da036a2809e4366a370672be23804563d31d4cfa8c4aa38f67cc0494206df8d4"
+    },
+    "create_metahuman/native_storage_repair.py": {
+      "bytes": 11476,
+      "sha256": "846f042517bf52cb376edaefb9d6f852919a288f7a10dd84e82b389f36e05662"
+    },
+    "create_metahuman/native_surface_commit.py": {
+      "bytes": 6483,
+      "sha256": "7b8b800a8bc40f33801b8aef42f39806ce1bfe48bc920f7688720e317749d458"
+    },
+    "create_metahuman/native_web_bundle.py": {
+      "bytes": 18328,
+      "sha256": "44751c7477100c94115044509b3c989d043d4ce10670a8c78a48d306efffb18a"
+    },
+    "create_metahuman/native_web_geometry.py": {
+      "bytes": 13515,
+      "sha256": "9ae04ea9542d55b194ea32dafe37436f54a2e3d0719130d05f2951c505882829"
+    },
+    "create_metahuman/native_web_geometry_worker.py": {
+      "bytes": 608,
+      "sha256": "52593fcee31448c2c54d5ee97c6d8cb87be94766845d1e3a4c3a8c936b733554"
+    },
+    "create_metahuman/native_web_grooms.py": {
+      "bytes": 17623,
+      "sha256": "7bf4afce8a87f9bc90c49f2847fb74f15865302432ee1087d8ce9083729a1f67"
+    },
+    "create_metahuman/native_web_jobs.py": {
+      "bytes": 26917,
+      "sha256": "e3464d5838605ebf6fed37f4f1cf82f4aca7c6faf2ce80a254992bd56a0301d3"
+    },
+    "create_metahuman/native_web_materials.py": {
+      "bytes": 14311,
+      "sha256": "d23f453e53b88039cb87f09585f5e7267bab689be499970ea1eaf3503e785bc9"
+    },
+    "create_metahuman/native_web_pipeline.py": {
+      "bytes": 8478,
+      "sha256": "955c6db7c6985ea68d561542406a6ad06b2dab419a56d5013b8854223f432a7a"
+    },
+    "create_metahuman/neck_color_core.py": {
+      "bytes": 4893,
+      "sha256": "ce2202d0f4ab408bffe51597dfc190646dc70d5831f6b4ccafa06b880173fc83"
+    },
+    "create_metahuman/normal_composition.py": {
+      "bytes": 5428,
+      "sha256": "e44c33a7e1e5f50ab88938827867a5d6c6ccf9cc787030558b4e154358ba3098"
+    },
+    "create_metahuman/ocular_attachments.py": {
+      "bytes": 4956,
+      "sha256": "3a983df2eef5f7b276fdc836cd9fb5282acee8f886574dd596235ff22d657beb"
+    },
+    "create_metahuman/ocular_contact.py": {
+      "bytes": 4556,
+      "sha256": "245654e39cac34986de3a5e7a416680c5b0de03fe6dcbe1b9c4e97e2e0fea78d"
+    },
+    "create_metahuman/ocular_convex_contact.py": {
+      "bytes": 5609,
+      "sha256": "9e1b06fdc714421b0f12fee4fb586d0166d1e4bb8432ba3497e5bed3939812dd"
+    },
+    "create_metahuman/ocular_front_fragments.py": {
+      "bytes": 5325,
+      "sha256": "1581623c16d5d45df57fa42bb4f6d5c35179e6573794a801a37e1438d37273ea"
+    },
+    "create_metahuman/ocular_globe_refine.py": {
+      "bytes": 6474,
+      "sha256": "7ec4e395c5757144bb2cb53ff8bb7d0011f9df85ace0e96e01d5a64cb2607d81"
+    },
+    "create_metahuman/ocular_globe_volume.py": {
+      "bytes": 11692,
+      "sha256": "34d8b4a82738113debe70732ecc9abfcad91ef3e67f690035dee2f2e417665a3"
+    },
+    "create_metahuman/ocular_lid_contact.py": {
+      "bytes": 13516,
+      "sha256": "58bbda54ea3a1e397d2f6eadbc5206a907de36a2fa2eb54160b3a7ffc93900a1"
+    },
+    "create_metahuman/ocular_motion.py": {
+      "bytes": 33797,
+      "sha256": "9393897928f5d060abc8bf8031d9f6b386610585b2f7519b49a34722367dbde4"
+    },
+    "create_metahuman/ocular_overlay.py": {
+      "bytes": 6348,
+      "sha256": "bde401c888e1a353cfa3330b94096d8e85425b525a6f0082916ca1909956575c"
+    },
+    "create_metahuman/ocular_pigment.py": {
+      "bytes": 3547,
+      "sha256": "2d535fcdbc8721ee05bdb912631f972373df6ec31f9cbaf779a36c308bc0db2a"
+    },
+    "create_metahuman/ocular_pose_domain.py": {
+      "bytes": 3360,
+      "sha256": "f9408ea50d310c17d48b4b8efa837c3d7bce4f03b6d8bf332bfe21e746ec81aa"
+    },
+    "create_metahuman/ocular_profile.py": {
+      "bytes": 2842,
+      "sha256": "42df1d4c5c68f8d0237c8d2cda797461ed77661ed1c5b4117621ac8df6ea42b3"
+    },
+    "create_metahuman/ocular_shape.py": {
+      "bytes": 2034,
+      "sha256": "8c0284e85b4af8c8a8baec8362dd0b2b8bdc3415de683e6bf0a2e53b3f7b8f5d"
+    },
+    "create_metahuman/ocular_surface.py": {
+      "bytes": 21591,
+      "sha256": "0beb5fc52745d5e18e8c665c0b879370ce7c8964dfdd6457adf276ac3f76fcf1"
+    },
+    "create_metahuman/ocular_visibility.py": {
+      "bytes": 7306,
+      "sha256": "8f99cfaa64399dff139e477e9ea10918c1348826736aaaaebeb63c862224d938"
+    },
+    "create_metahuman/packed_ao_repair.py": {
+      "bytes": 831,
+      "sha256": "a40fefd1a9404b4e32d33ad2c63675322620e5b7ac4de21547550722507e3983"
+    },
+    "create_metahuman/paint_reference.py": {
+      "bytes": 4190,
+      "sha256": "65156ca552b64e1a555d949b730be1c570f67c4909a656fa960b5f83eb98f232"
+    },
+    "create_metahuman/paint_session.py": {
+      "bytes": 23903,
+      "sha256": "d76c324b0cd940719d913b1554ba32ef9b2e80d368eba5d4495fefd1a6b8a6a4"
+    },
+    "create_metahuman/paint_tools.py": {
+      "bytes": 13040,
+      "sha256": "a311ffff42d3d3d35df1cbecb182a86e9e66a55cfd706813b19f279c688d936a"
+    },
+    "create_metahuman/partial_surface_fit.py": {
+      "bytes": 43640,
+      "sha256": "a62215533e03d410cc249de7a8db454d17709c8c3cd3e3d52bf50efc8e0f795d"
+    },
+    "create_metahuman/photo_color.py": {
+      "bytes": 16885,
+      "sha256": "57c366fc6e4f50a2b1abdc3d59cf13d6e2de5cbf38aa9185ce10c192ec66cabf"
+    },
+    "create_metahuman/photo_color_core.py": {
+      "bytes": 4204,
+      "sha256": "b07fea985928dcddf31814546c89df47e4ef70fd1dc9001d970ce4dd7fd4843c"
+    },
+    "create_metahuman/photo_color_worker.py": {
+      "bytes": 5856,
+      "sha256": "3bd1e3f19d03c0bc02c5956344c3f6dc2e0a4d2253ffaa3141d6ef7967571216"
+    },
+    "create_metahuman/photo_fit_core.py": {
+      "bytes": 5854,
+      "sha256": "f7c102e726c2bbb234e8c2f24af3e9a1e2463a699ecb804c938e2ab90f9b5d9c"
+    },
+    "create_metahuman/photo_fit_jobs.py": {
+      "bytes": 11954,
+      "sha256": "2849b4a237b9dfd41229b907d4aa6c89f1ed41cbe75be3835841ba85f1f264e1"
+    },
+    "create_metahuman/photo_fit_worker.py": {
+      "bytes": 3058,
+      "sha256": "0d3b762bc3f816334639fca544fcf52a7f7ff7ac1194937468a79c2561e58d59"
+    },
+    "create_metahuman/photo_review.py": {
+      "bytes": 12148,
+      "sha256": "080bde34e0f45e9f0c7f69b29a339638165e15c31eb288e2b6618cf7cdfc958c"
+    },
+    "create_metahuman/photo_skin.py": {
+      "bytes": 3345,
+      "sha256": "da8923173052a640506d1debfe68fc887cc465aa4158135eab3a28fbb20bfbb1"
+    },
+    "create_metahuman/pixel_buffers.py": {
+      "bytes": 1225,
+      "sha256": "c7f74e9cf6946a6fff5a8008abc9890e1829ca5183e11e3d6d6530dd857c1c6f"
+    },
+    "create_metahuman/preview_worker.py": {
+      "bytes": 2264,
+      "sha256": "04f1d19f728d3eee2fe91d9784e79f7e4e968ea666a1c1083cb6b83101401448"
+    },
+    "create_metahuman/process_ref.py": {
+      "bytes": 2418,
+      "sha256": "10056cd035b4eabf636cf23c18239079473628563810c2e303cbd5a534c8d298"
+    },
+    "create_metahuman/profile_fit.py": {
+      "bytes": 7948,
+      "sha256": "ca07a9a52caea5b981225671c005b497eeab6ef7183a01db619ab14da65a8578"
+    },
+    "create_metahuman/project_images.py": {
+      "bytes": 1745,
+      "sha256": "49d7cc209e3024d9a6eb55f6a14222193414c9a0f1c02492ab1a221d985f7996"
+    },
+    "create_metahuman/project_reuse.py": {
+      "bytes": 19150,
+      "sha256": "930dc3f12fdc7cc27eb39f2d9ede9c7724b0578e37b458fac7f6dd0c0da4b236"
+    },
+    "create_metahuman/reference_library.py": {
+      "bytes": 15119,
+      "sha256": "99a4b03b9dc0816d3dd84c49bc30c8dd5a8a53c135531e34eaa88ba314ade4d3"
+    },
+    "create_metahuman/region_projection.py": {
+      "bytes": 75425,
+      "sha256": "d70880591ee4ca6cc2301e5002cc89fdbafd95c492f96bb1a08757e714c46c6d"
+    },
+    "create_metahuman/region_reconstruction.py": {
+      "bytes": 21537,
+      "sha256": "cb62751feb5b6ac907cea97be800a1a307b147a03a6c5f4bc1a52df96e6ab934"
+    },
+    "create_metahuman/regional_attempt.py": {
+      "bytes": 1589,
+      "sha256": "611a1140fe4b54968538e29307ea34018399033cac7375dfd6640e80b6a412d1"
+    },
+    "create_metahuman/regional_native_budget.py": {
+      "bytes": 5341,
+      "sha256": "53ad93f143f867d2bca82eb0b346d2b44e9405b6ff8268c7fa54f5903cc3ea1e"
+    },
+    "create_metahuman/regional_polish.py": {
+      "bytes": 4981,
+      "sha256": "79177ffe6528779dc41086aa4fb36d8cc10419d4561224ef73b15611e9f2d4d5"
+    },
+    "create_metahuman/regional_scan.py": {
+      "bytes": 19893,
+      "sha256": "3f5f9d91c14c75418d7484f7689ca128994f4998fac31f4ff8b7e71b51e5cc6c"
+    },
+    "create_metahuman/regional_shading.py": {
+      "bytes": 4278,
+      "sha256": "8b1ca2251add81b1a4553c4e2fd94f7b76c846ac693d2c1abfe74ffe1fc650ff"
+    },
+    "create_metahuman/regional_source_projection.py": {
+      "bytes": 2978,
+      "sha256": "e613ce7cddf7ae867c31fa5c920c52ba9ccf786040ebd42ff312419c374559db"
+    },
+    "create_metahuman/resource_budget.py": {
+      "bytes": 4736,
+      "sha256": "0e1e25788f76d997f3dc603cd58c2cf6c767d8492aa2cc31f47b31f425f23910"
+    },
+    "create_metahuman/restore_brush.py": {
+      "bytes": 26617,
+      "sha256": "be185b0311728184a76158b93625ed30bf8078d6041a2888e85b886a032e33a0"
+    },
+    "create_metahuman/reuse_details.py": {
+      "bytes": 4437,
+      "sha256": "e666f0afb9edda4fa154fea936e933c15ad0d623b55980639543d50dd3b9a088"
+    },
+    "create_metahuman/reuse_wrinkles.py": {
+      "bytes": 7890,
+      "sha256": "822e5a7c826534a2dfa28f1285c862a77150bc75f4bec273b8460c9511386caf"
+    },
+    "create_metahuman/reverse_coverage.py": {
+      "bytes": 4421,
+      "sha256": "526c1a6ee9a94a4b73345d1b782d30752b36a88dc60a2925fac74f4086f053d3"
+    },
+    "create_metahuman/review_geometry.py": {
+      "bytes": 3849,
+      "sha256": "eb90bb6fc604ccbe5c74369e87591cbeb972c5386505372831304361e7234003"
+    },
+    "create_metahuman/revision_texture_update.py": {
+      "bytes": 6454,
+      "sha256": "fd0d3b6d2052fdad00861c1495880292262d9fa75c82a3b17125817bef853941"
+    },
+    "create_metahuman/rig_jobs.py": {
+      "bytes": 6399,
+      "sha256": "dbc6d7f544c801a3f89c6ac15e6933bebb8b384700e75bb7e569140b704dc294"
+    },
+    "create_metahuman/roughness_response.py": {
+      "bytes": 3183,
+      "sha256": "b660b01cd51ba269c2b6e27b208acf91322ebdc2ac961115fea0ec3b46bed4da"
+    },
+    "create_metahuman/scan_jobs.py": {
+      "bytes": 19737,
+      "sha256": "c4a3916539b2d9b78a0a0d2f946e5020a7e537ddab537f0185547ef5574fc5bd"
+    },
+    "create_metahuman/scan_projection.py": {
+      "bytes": 4973,
+      "sha256": "f392837a36d104095f1d688cc347a5b6cf5c49f0cbc54d495cbe57fa5c8f0719"
+    },
+    "create_metahuman/scan_worker.py": {
+      "bytes": 3341,
+      "sha256": "f87020ff6727772f4622bdeabf26a013df6ebdc4e58acd177891ca355ef1a262"
+    },
+    "create_metahuman/sculpt_archive.py": {
+      "bytes": 24802,
+      "sha256": "9f172dccff0680c9de4697dca9c81d166bf187607b52be20b0ae46e629ad2e9a"
+    },
+    "create_metahuman/sculpt_dependencies.py": {
+      "bytes": 15553,
+      "sha256": "efd8c1640e14bb01984c8e4aa6118b9481c087d1654f87b9d52a6bddc911ce2f"
+    },
+    "create_metahuman/sculpt_modifiers.py": {
+      "bytes": 8209,
+      "sha256": "53a0d65b1b79d3242ce4c65d6c0e95a3f380daa314a5b1ab821eae334c1ec08a"
+    },
+    "create_metahuman/sculpt_parts.py": {
+      "bytes": 9072,
+      "sha256": "f2b1027089dbaaa1e0e034721a4ce866ad430ec220583f6ecfddbaf9131bc441"
+    },
+    "create_metahuman/sculpt_session.py": {
+      "bytes": 43415,
+      "sha256": "9a75a0bf89df4532b08b65557dad7eab8a9023f90f192335fb715b15747a688c"
+    },
+    "create_metahuman/sculpt_session_ops.py": {
+      "bytes": 1082,
+      "sha256": "61f72abe46d70a95654e7c44a3d56f433512078ea71907144944e00b06f03ab3"
+    },
+    "create_metahuman/sculpt_session_worker.py": {
+      "bytes": 3990,
+      "sha256": "c774a109f69d08cbb1d96dc873ad221a25b8b10f4dab790af4158b6ca607d699"
+    },
+    "create_metahuman/semantic_correspondence.py": {
+      "bytes": 13906,
+      "sha256": "08ed426495f6de8308b348a407f95260c57c19ab04861f0c238b9a77095c1039"
+    },
+    "create_metahuman/setup_paths.py": {
+      "bytes": 3190,
+      "sha256": "ef26fa20437eb89dcbe2f3f71daefa6cf17dd80c747ba9885898b143d2ee91c1"
+    },
+    "create_metahuman/shell_correspondence.py": {
+      "bytes": 2052,
+      "sha256": "893dfb8ab59ff3cd86d81cc31524f2ce1bb8b5c853cb1e066e684f55a93be48d"
+    },
+    "create_metahuman/simple_shading.py": {
+      "bytes": 14518,
+      "sha256": "93eba5e9340de975f1bd77d0805fae93cd325cd74176f0fd3383528b5a1841b1"
+    },
+    "create_metahuman/skin_anatomy.py": {
+      "bytes": 6859,
+      "sha256": "8c82510189ee83c97e0aecbf3bee927cada983370dca94680ddd7a9d8f90c556"
+    },
+    "create_metahuman/skin_bake.py": {
+      "bytes": 12596,
+      "sha256": "a713221f7a94712cbe8ef31a0d8ac3b0b2c6bbc7ad22cef51855d36a19e4fbb6"
+    },
+    "create_metahuman/skin_bake_layers.py": {
+      "bytes": 26537,
+      "sha256": "96068b03beb6fa8b4c6e8b848e9c01ac4dfeed6076c051656af34856bd813497"
+    },
+    "create_metahuman/skin_bake_layers_ui.py": {
+      "bytes": 2360,
+      "sha256": "4b491338c1043fdfe17513ba028811de4416026921c6406e9ab3c3769c335933"
+    },
+    "create_metahuman/skin_bake_layers_worker.py": {
+      "bytes": 6280,
+      "sha256": "cfd6289ed53f6a8da7276b09deabdf5e52ac4d33818f93bf2c6785c99b6616da"
+    },
+    "create_metahuman/skin_bloodflow.py": {
+      "bytes": 2748,
+      "sha256": "24cad6a7cdc4ec2a192ed70fac5f41a501383395c2cac3a1b967bf5f2108372f"
+    },
+    "create_metahuman/skin_brushes.py": {
+      "bytes": 15261,
+      "sha256": "ff3666a8e1a9aa0df71d4a093534c63fcf1844d7d07ece37b56a47c25c326ddf"
+    },
+    "create_metahuman/skin_detail_color.py": {
+      "bytes": 2513,
+      "sha256": "6e32cbf55b7afeecdaa351c4617abfa4746ff83a88e73eff80a179d65a2fd552"
+    },
+    "create_metahuman/skin_library.py": {
+      "bytes": 24679,
+      "sha256": "d77d158ae0f4561eb1b5a184a5024cec81a47ca2c8eec116fe63c4befe2f49e3"
+    },
+    "create_metahuman/skin_material_core.py": {
+      "bytes": 8478,
+      "sha256": "75b34064305c30a53ee5c6d771db04e87726071c23b4ef9becf3a5de8333ad81"
+    },
+    "create_metahuman/skin_native_jobs.py": {
+      "bytes": 7756,
+      "sha256": "81e5557d81380a0a1c4e4a1a5ddec27d7b706c733886d4e7ff5c4f3d4af98a34"
+    },
+    "create_metahuman/skin_normal_history.py": {
+      "bytes": 7793,
+      "sha256": "74a0981264da04940e7f57da5afca05f172c1312ba32bc6158033ab874155c64"
+    },
+    "create_metahuman/skin_normal_patch.py": {
+      "bytes": 2237,
+      "sha256": "e7a49e25a4cd6c3c3f64d2f0b2addbf02d63bb7c0526fc28ade53d415473fbbf"
+    },
+    "create_metahuman/skin_projection.py": {
+      "bytes": 5597,
+      "sha256": "75fe03b134ea5efaacf607151c4032dc715c2fb66205a5280e0b8d16c7813de3"
+    },
+    "create_metahuman/skin_projection_history.py": {
+      "bytes": 6768,
+      "sha256": "c413d166f58af40cc03e50984bd5b03cce889b85892b0b504054a3a04c74f6c2"
+    },
+    "create_metahuman/skin_reconstruction.py": {
+      "bytes": 79688,
+      "sha256": "54b7aeb2c19ea4d6b04e87709112c9f3b53894996d5e9360c0df70258b4a1007"
+    },
+    "create_metahuman/skin_reconstruction_core.py": {
+      "bytes": 18965,
+      "sha256": "dec7045cef498b36bfaab9fb05b0bb26d30bd7fba26cc30810dd881914352edc"
+    },
+    "create_metahuman/skin_reconstruction_worker.py": {
+      "bytes": 33566,
+      "sha256": "92833ba94c1f45bdf5ed779e8eeabe528285277c6eb4438aac4e3a0440d6d460"
+    },
+    "create_metahuman/skin_region_continuation.py": {
+      "bytes": 4905,
+      "sha256": "d9790bd7d0088e777e71925f98648b03a69774a8697e5f1922122b4dbc5dd46c"
+    },
+    "create_metahuman/skin_solve_staged.py": {
+      "bytes": 8559,
+      "sha256": "85dabd3e5f3c4f6667574103bd5d1b0b653692b8afa1a00d5b80ffea2d1d8a93"
+    },
+    "create_metahuman/skin_storage.py": {
+      "bytes": 6661,
+      "sha256": "d7527c3b1122cd8e8186df0686874d7d53350a79c8d53b85614d22ba4bb128c2"
+    },
+    "create_metahuman/skin_uv.py": {
+      "bytes": 6201,
+      "sha256": "5326d6fadc47c9c8de471a8f4b8a9d2906dd509019380c89cac9652ac61fcff6"
+    },
+    "create_metahuman/skin_worker.py": {
+      "bytes": 12132,
+      "sha256": "a8ecaf145f1de9cc46b1d7da14604df8a3710d93567be076b2852a8d537a501a"
+    },
+    "create_metahuman/socket_embedding.py": {
+      "bytes": 6649,
+      "sha256": "40f2f86ff5c14e558a702c06757a04cb65dd54512caa71d0f2a5fe83849c4fcd"
+    },
+    "create_metahuman/source_alignment_energy.py": {
+      "bytes": 1207,
+      "sha256": "ca3d52663a3d201082fbf544ee95f789f40b8bac501575bf45ec4ccc6f0c7cf8"
+    },
+    "create_metahuman/source_angle_contract.py": {
+      "bytes": 5784,
+      "sha256": "2962564a20b2d4a133342cfb550cb8df948742967c271350acfae90b48977789"
+    },
+    "create_metahuman/source_budget.py": {
+      "bytes": 10788,
+      "sha256": "7543b8d9620b98c58d8fae6c61cdd962b5784b1a2f6693eb8e5d280558518eba"
+    },
+    "create_metahuman/source_contours.py": {
+      "bytes": 4776,
+      "sha256": "6988f1e53b107e630a1185832400fdea0c06698f87cbd10d9a25f4f62b6aac10"
+    },
+    "create_metahuman/source_differentials.py": {
+      "bytes": 7295,
+      "sha256": "2e3eb28b2c55165720318cd44d7f813abf20543fd0bed234bb00c7a5ff171224"
+    },
+    "create_metahuman/source_direction_support.py": {
+      "bytes": 1143,
+      "sha256": "3ef7a26674d84b83be4387755bd57a91c4d82f9fe9b4578364c00eadb654d5f2"
+    },
+    "create_metahuman/source_endpoint_restoration.py": {
+      "bytes": 6697,
+      "sha256": "63f75a3883add3cc3f84b83f04a8fed6ec94ffab85be0676b52d48c86ccfe4a2"
+    },
+    "create_metahuman/source_envelope.py": {
+      "bytes": 25596,
+      "sha256": "44d1bba8bd19165b740e910bb2118e0bc9c4db9913d9def8c22b8c9c06129de7"
+    },
+    "create_metahuman/source_field_derivatives.py": {
+      "bytes": 4363,
+      "sha256": "2c483a7d8f8d0f6f9cdb64a41ae56b13bb70532adf63ff35d6fae1ca205c7746"
+    },
+    "create_metahuman/source_import.py": {
+      "bytes": 7139,
+      "sha256": "5ca3669b4bd086f5afbc2dde8288ad2e8a41f101e05aa461ca2e609155d00533"
+    },
+    "create_metahuman/source_nonlinear_polish.py": {
+      "bytes": 14104,
+      "sha256": "06c00775752f29d6fb42b81f27dab97569f28b1c1cf6444cf83bf877d9a2d06d"
+    },
+    "create_metahuman/source_nonlinear_restoration.py": {
+      "bytes": 21688,
+      "sha256": "05c7b87c7a46b6188d1c032244f9eb1221db2c3389f8ea91b093c370744ba071"
+    },
+    "create_metahuman/source_overlay.py": {
+      "bytes": 10149,
+      "sha256": "646e40f15a0542a2f1e2bf643c5f944963a0dcc32e3d3b7a15f591e366edfb80"
+    },
+    "create_metahuman/source_patch_reconstruction.py": {
+      "bytes": 9881,
+      "sha256": "1d94d23c246c39431d5d48f77caa39561b271a71a152079763a954b6064288d7"
+    },
+    "create_metahuman/source_region_review.py": {
+      "bytes": 3851,
+      "sha256": "f6f5a5cf97749c948c17e2660ca6fa1c4f838fc3b0057fba21a259c738149326"
+    },
+    "create_metahuman/source_regions.py": {
+      "bytes": 2510,
+      "sha256": "fbed76b48f0efd42e003c235179f3e8f0373accc23b22525eef82f0f44d42224"
+    },
+    "create_metahuman/source_surface_interior.py": {
+      "bytes": 3933,
+      "sha256": "23d86c3453b940d52c5fa36212f90a2c7b65a93397da83794c378d5678ed8186"
+    },
+    "create_metahuman/source_tube_projection.py": {
+      "bytes": 1399,
+      "sha256": "9812482c7d594889f5d118147ed5f4cdf2031b314d9f1b5240abe807b0b69d9e"
+    },
+    "create_metahuman/subdivision_order.py": {
+      "bytes": 4785,
+      "sha256": "817c54b848d39c0a63873246c9a56dbe07427995732216407115338640a0b744"
+    },
+    "create_metahuman/surface_alignment.py": {
+      "bytes": 8430,
+      "sha256": "0e56c3702231e1ee4a4c02255b458a482aa71a1337330afe3fd244ead82bca1f"
+    },
+    "create_metahuman/surface_angle_restoration.py": {
+      "bytes": 8736,
+      "sha256": "ade17f588f2dcd60bea620130f2393266ee66fd2d1c48e763f10a6505495598e"
+    },
+    "create_metahuman/surface_charts.py": {
+      "bytes": 29177,
+      "sha256": "4194145fd01dfc3830bcef465c8fc33779eb6e00a356cd0ebba5a3e1ef643dc3"
+    },
+    "create_metahuman/surface_color_completion.py": {
+      "bytes": 6573,
+      "sha256": "b4cf0dec28273081db649a2c05a62e9b1aba3eb0bccc0ef3c556204d2ec8a3d7"
+    },
+    "create_metahuman/surface_completion.py": {
+      "bytes": 9213,
+      "sha256": "cbe4a7072ae89b50116edc07f3a74504e65a296a08a3090e248ce8053837b496"
+    },
+    "create_metahuman/surface_contacts.py": {
+      "bytes": 6644,
+      "sha256": "9e09063dfaaa77e057f88d021fbbdfa55c3303638c6b20026f837f48b7ca10c3"
+    },
+    "create_metahuman/surface_correspondence.py": {
+      "bytes": 3326,
+      "sha256": "863580544f7af4077b3987e2f36de1ea3fbe20c10e1a0a82dd6f28eb41b0559a"
+    },
+    "create_metahuman/surface_defects.py": {
+      "bytes": 9753,
+      "sha256": "f7b1f405c707722b6270952ae95844eeace39716243254c76a2f78e27b155d94"
+    },
+    "create_metahuman/surface_fairing.py": {
+      "bytes": 13110,
+      "sha256": "c0593eaf6467bbaf131414098632d2744be20b5ed785b4e679f9de32255c48a6"
+    },
+    "create_metahuman/surface_fit_jobs.py": {
+      "bytes": 29616,
+      "sha256": "3b48e669390cb187cf4c0cfa91f9f8dee3154099de347e2940e842c40cbd817c"
+    },
+    "create_metahuman/surface_fit_measurement.py": {
+      "bytes": 16230,
+      "sha256": "83098be0f0d80ebbf2467d38b75558bf8f003b69adde95af115870caee7f26b2"
+    },
+    "create_metahuman/surface_fit_worker.py": {
+      "bytes": 3372,
+      "sha256": "ae05e3e8453165c2aef2a2763a6ad4f3ec62a347bf3226ccb8719a3897c824e0"
+    },
+    "create_metahuman/surface_heal.py": {
+      "bytes": 15136,
+      "sha256": "31ee71bcb06e59048cd6623b1e7de653a2d1d9531746f585d36ceaa37773adc9"
+    },
+    "create_metahuman/surface_heal_core.py": {
+      "bytes": 6563,
+      "sha256": "dd110da014284bc0db6dda447e7388d27c7a45af1cc6bf69542f61bf623e98a5"
+    },
+    "create_metahuman/surface_heal_worker.py": {
+      "bytes": 3566,
+      "sha256": "52bf31d025d5f5f58c455204acf47802b860d7475d0cd8c63f699f97714930cd"
+    },
+    "create_metahuman/surface_identity.py": {
+      "bytes": 3533,
+      "sha256": "236bd9ca1c1c8951d5916158693430922300b5330351e73665433653b5f42c9d"
+    },
+    "create_metahuman/surface_intervals.py": {
+      "bytes": 10601,
+      "sha256": "6962732b417e04bfe28b0f57b06931d218132e35162d9e324c3b8e483b078866"
+    },
+    "create_metahuman/surface_maps.py": {
+      "bytes": 3645,
+      "sha256": "32e0cb05d9cd3072bd781e566fe2218905b73e7f68ee6a356845d8c90867eda9"
+    },
+    "create_metahuman/surface_normal_continuation.py": {
+      "bytes": 16002,
+      "sha256": "150021661f2438badeea5a66b9caf1cd544569d77b8386559e027c720a85b7e5"
+    },
+    "create_metahuman/surface_normals.py": {
+      "bytes": 3280,
+      "sha256": "1bf25d1eebde22f9616c631f40f18268642bd797e5b319ed6ee2d3d5191eea7f"
+    },
+    "create_metahuman/surface_oracle.py": {
+      "bytes": 13901,
+      "sha256": "c954080ed3bb24487350888b43c68b36a9357f79b648b9ee6557f7e550e5dc2a"
+    },
+    "create_metahuman/surface_sample_transport.py": {
+      "bytes": 6127,
+      "sha256": "f967cc1bf24e944860f79eed93e440643f89d75caf71a0cdfcb590d68bec1a86"
+    },
+    "create_metahuman/surface_support.py": {
+      "bytes": 6154,
+      "sha256": "692efaf2f314df42a69035396a735324f6b01c97020cf56bb4ab8aa15dc614db"
+    },
+    "create_metahuman/surface_transport.py": {
+      "bytes": 6479,
+      "sha256": "4b3b5ea3db12fa79477b59be40584dc42a79fa9a8662c9e90de0ec770360a7f3"
+    },
+    "create_metahuman/texture_backend_identity.py": {
+      "bytes": 1590,
+      "sha256": "c3b67d752eea79c7686bb734e26cb455bed33e66bfe9135799f354e4e2c00ae2"
+    },
+    "create_metahuman/texture_detail_refine.py": {
+      "bytes": 2845,
+      "sha256": "39e95231ee51eda80e274fde2243cbaae1c3f6272e475fc54698f472d13fda9a"
+    },
+    "create_metahuman/texture_edit_prior.py": {
+      "bytes": 5807,
+      "sha256": "8e24e52cd0fa56ca9164cb392783ff19a15f6d9880ccd539b423229bf5a2350c"
+    },
+    "create_metahuman/texture_join.py": {
+      "bytes": 8153,
+      "sha256": "d78b886aac288b46c730e6290be0c1ab5fbfe9e6ce00ffd49f3f1eaf157e6183"
+    },
+    "create_metahuman/texture_prior_cache.py": {
+      "bytes": 3822,
+      "sha256": "73e141809ac109661fb1049722081172b89775d7c3ba160379e451cfde82a95a"
+    },
+    "create_metahuman/texture_region_completion.py": {
+      "bytes": 5396,
+      "sha256": "cc46cc7f863eda343cb8dede3fa522de58b7058b373c2b250e0b9a8fe8208457"
+    },
+    "create_metahuman/texture_restore_backend.py": {
+      "bytes": 10624,
+      "sha256": "dfb7a49932737b3bbfb6b7f0478b81bd977647f2b3a034f14d30a1e109e2962f"
+    },
+    "create_metahuman/texture_restore_core.py": {
+      "bytes": 9979,
+      "sha256": "5e97172c545e4a0ea6c34b3eac7c0662dca5f27382ac0b38cb5178c8f92d6655"
+    },
+    "create_metahuman/texture_seams.py": {
+      "bytes": 13156,
+      "sha256": "0d103f3762c5a84794d0544c977237d3f7c9ffeafa408aab3a82cc3cd07f8bab"
+    },
+    "create_metahuman/texture_sr_decode.py": {
+      "bytes": 2750,
+      "sha256": "0e352a944c4f0e4125e242068f95c45ed59f14115eff00bf200b1b46f8ef2e21"
+    },
+    "create_metahuman/texture_sr_prior.py": {
+      "bytes": 9678,
+      "sha256": "fe99a82900400ca0837250a205f38c7bab9aca4899f8410a48ac116cb2981f17"
+    },
+    "create_metahuman/texture_sr_restore.py": {
+      "bytes": 5994,
+      "sha256": "083d74201fdf17cb8e6aa6c2f51bca170a9d791496c0ac5c4f6ffff44b793a1f"
+    },
+    "create_metahuman/texture_surface.py": {
+      "bytes": 14792,
+      "sha256": "a81a1f0889764f886b71bd52843780421bdbd34d3b2f96a6ba45b8bc2406f28e"
+    },
+    "create_metahuman/texture_surface_restore.py": {
+      "bytes": 7282,
+      "sha256": "f406d14fb6c39ad380ed1fa3af34706cf4b56045916bf2ca83f524ee64613b6a"
+    },
+    "create_metahuman/texture_update.py": {
+      "bytes": 10300,
+      "sha256": "6304c20290436047e0ca942de3f79606bda3022f7d6ff1f5cfd52b520343e095"
+    },
+    "create_metahuman/textures.py": {
+      "bytes": 35580,
+      "sha256": "2c2de0950df1c4a9dc8a80a606adcc515507c17e2a5dc60bd9f499abdc7fa70a"
+    },
+    "create_metahuman/unreal_actor_preview.py": {
+      "bytes": 7102,
+      "sha256": "c5234f0a83568a8e08eae858a8b4ee78a0f449ca4ba01388318c7cda0bab170d"
+    },
+    "create_metahuman/unreal_artist_state.py": {
+      "bytes": 8957,
+      "sha256": "e198d1b833eeaf1b83efcccc2e96cbccc6f1dbf879e32ca0d0bb6d790e908ebe"
+    },
+    "create_metahuman/unreal_assembly.py": {
+      "bytes": 16678,
+      "sha256": "00e0301d834e40eb802788f3a459449af85bab69b29efa9f829111c374e7b86e"
+    },
+    "create_metahuman/unreal_assembly_auxiliary.py": {
+      "bytes": 4313,
+      "sha256": "07d5e50997b873dca9f00b932c34f10ddca955d4b253e9b0759254aa82a1c618"
+    },
+    "create_metahuman/unreal_assembly_eyes.py": {
+      "bytes": 15646,
+      "sha256": "93503a2db82517b282a9ea56920c4e03d0ede553a3783d6d30b628394aabe758"
+    },
+    "create_metahuman/unreal_assembly_textures.py": {
+      "bytes": 7190,
+      "sha256": "84c57b2f7b2b642ad2642a5602730a7ef4b3edf56c152858ea72d0f90d5d7ecd"
+    },
+    "create_metahuman/unreal_character.py": {
+      "bytes": 6492,
+      "sha256": "3fded285bf14e55b27a5c21a7a106781b4b647a78c23dd3e40ed1537db5bea16"
+    },
+    "create_metahuman/unreal_deformation_normals.py": {
+      "bytes": 3121,
+      "sha256": "ae9fefba774b3b65d39e668b2a2a38d3bbeab7efde26c74b519d9200de777f3f"
+    },
+    "create_metahuman/unreal_expressions.py": {
+      "bytes": 4734,
+      "sha256": "f91ef43afb9d055a6705575c19c2c9655f5fd12b4b2510944d9d99cfc96c9331"
+    },
+    "create_metahuman/unreal_eye_isolation.py": {
+      "bytes": 1826,
+      "sha256": "17ad84f22cf53375c8f2571fe4f5b977b49ee13e59d933f2eb999a089244bf17"
+    },
+    "create_metahuman/unreal_eye_overlays.py": {
+      "bytes": 8014,
+      "sha256": "79ae7b6a356a0eb05440de583b66bd7f69dbe2d502f800061dff5af7042d06ff"
+    },
+    "create_metahuman/unreal_eyes.py": {
+      "bytes": 1569,
+      "sha256": "3f7d5b7dd9e107f6864f00d7df5f663d3db1f0b9e14c02b938fd11698de0268d"
+    },
+    "create_metahuman/unreal_face_comparison.py": {
+      "bytes": 14003,
+      "sha256": "ce4f1bc994280ef53576fe72d42b694909f93e80ff5ccff0ab2f0e6af8e7c550"
+    },
+    "create_metahuman/unreal_face_look.py": {
+      "bytes": 9151,
+      "sha256": "9f0589afe52dc5fffaaa63720b370d53c01752dd7ffe3e01a21a6fcf2284a94e"
+    },
+    "create_metahuman/unreal_face_review.py": {
+      "bytes": 20557,
+      "sha256": "3b259f07be9510833fbe6dbe6155a79cc03240694c235d71d5764814f276cea3"
+    },
+    "create_metahuman/unreal_globe_gaze.py": {
+      "bytes": 1137,
+      "sha256": "65bf424a0ce14d347a6a8c60325f8d1d68cb102958df8442d92a298f2b564646"
+    },
+    "create_metahuman/unreal_globe_rigidity.py": {
+      "bytes": 7289,
+      "sha256": "082345a23407af19be5416e6091dab73b07ef3e99870c751df525bb8801fd6e5"
+    },
+    "create_metahuman/unreal_groom.py": {
+      "bytes": 39692,
+      "sha256": "95d143e37a0aecc3f636daee78bc8d3d85318147944123326b0c5cc424943642"
+    },
+    "create_metahuman/unreal_head_revision.py": {
+      "bytes": 20326,
+      "sha256": "102263fb83447d3c0a67234cac2e0b9a58927b464a3ecfc09a5c01b80d43837f"
+    },
+    "create_metahuman/unreal_import.py": {
+      "bytes": 31202,
+      "sha256": "0e1cde01148cf84254e2e432b0fa352127ab8b3eaa065010fb518bd92bf55fa5"
+    },
+    "create_metahuman/unreal_jobs.py": {
+      "bytes": 54905,
+      "sha256": "eea03fc3f5d3a31f30bc011c18d50e6b12f79296da418aa71d52d8e60a6a4f8f"
+    },
+    "create_metahuman/unreal_lash_fit.py": {
+      "bytes": 17473,
+      "sha256": "7b1fae66a1af19fae067daed159faab4d4af7b7709cd441ac646d9c1a362698e"
+    },
+    "create_metahuman/unreal_lid_preparation.py": {
+      "bytes": 8810,
+      "sha256": "f96a19ab575d43169b68ad632bffd634366b3fdb1feff5e74c2e4728574ed7bc"
+    },
+    "create_metahuman/unreal_lid_staging.py": {
+      "bytes": 5941,
+      "sha256": "b72fe8b0306f978c9d249f6965919f42a38204cd03827c2e450ce8939125fb4b"
+    },
+    "create_metahuman/unreal_local_head_repair.py": {
+      "bytes": 4326,
+      "sha256": "a836e2dc7c60bcdbb858e0539750b8811bbb3288dbf61913ec843d5a0327d945"
+    },
+    "create_metahuman/unreal_lod_correctives.py": {
+      "bytes": 17913,
+      "sha256": "90170044f6a2c7b47c38e1be2c6438a0c68d1b0cd9e311791da66247616d5a84"
+    },
+    "create_metahuman/unreal_native_albedo.py": {
+      "bytes": 18591,
+      "sha256": "8ce41a1a15d73d3d1c8a90eaba83f93cee1c677ab702a40be93f3f6ccdf4ee3d"
+    },
+    "create_metahuman/unreal_native_animated.py": {
+      "bytes": 2974,
+      "sha256": "69abb414a051d43a4d46874a9f5d86e3e6b9a95755e3d82604e906baf6a8cada"
+    },
+    "create_metahuman/unreal_native_eyes.py": {
+      "bytes": 21081,
+      "sha256": "02657011cf542c4839704421f22b5cddd9f28f911863ff77cc6652749eb00c0d"
+    },
+    "create_metahuman/unreal_native_maps.py": {
+      "bytes": 21697,
+      "sha256": "ed04539a49648f90dbd52fa38d2ffbba2d3b6706970344bacaf3700b2a73b32b"
+    },
+    "create_metahuman/unreal_pose_bank.py": {
+      "bytes": 6987,
+      "sha256": "de3eea625e9fe38d472e3f7bdc040d8f199d1713d40863cb5f138c5225bad225"
+    },
+    "create_metahuman/unreal_revision_bounds.py": {
+      "bytes": 10319,
+      "sha256": "e061876c2f8cef64a34cf34e642abc37f359f3e23555948897fcbd4671942e5f"
+    },
+    "create_metahuman/unreal_revision_textures.py": {
+      "bytes": 18076,
+      "sha256": "a97bfd31835eb19ea2ec2976a43d884e17cdf3a429213c198ca53e070a6ac6de"
+    },
+    "create_metahuman/unreal_rig.py": {
+      "bytes": 11615,
+      "sha256": "26b78ce1c19611fba78c98115309ec345f37fe9faeadbf2aa7b0aaed81a2b7a8"
+    },
+    "create_metahuman/unreal_roughness.py": {
+      "bytes": 27985,
+      "sha256": "8dee3bcf340f6d290d63873b03dd705d5cfc15c82ccc1dbb74c33a1fb26fee4c"
+    },
+    "create_metahuman/unreal_skin.py": {
+      "bytes": 11430,
+      "sha256": "96378a70180b34c7fc806e316ee153758c4aad6dc4bb14c88da741a682511b96"
+    },
+    "create_metahuman/unreal_skin_normal_response.py": {
+      "bytes": 7286,
+      "sha256": "711a2eea10b4d52d2101bbb25cdc2ab828b283168083925cd5d13a5212541c63"
+    },
+    "create_metahuman/unreal_skin_repair.py": {
+      "bytes": 7224,
+      "sha256": "f566e4e4b7d219f5b047fbba75d026e3df6c4073aecaa7bd2ed53e8736580dec"
+    },
+    "create_metahuman/unreal_texture_sources.py": {
+      "bytes": 16985,
+      "sha256": "b2d5a4e0f22ec4537cc3667c7892eff69d162ac4961289dcf486cbc47c8d1869"
+    },
+    "create_metahuman/unreal_texture_update.py": {
+      "bytes": 18141,
+      "sha256": "58bf80b48755776f2f36c556770897d6695af54b23f4642793a48158ca32c77e"
+    },
+    "create_metahuman/unreal_web.py": {
+      "bytes": 12936,
+      "sha256": "46901989489d705fd452028db1a23d36d9c5a262054ac48dae6ca53b636098c6"
+    },
+    "create_metahuman/unreal_web_appearance.py": {
+      "bytes": 13015,
+      "sha256": "fb32a30f17744b7b8811752ba4a4cfb16010fa1c530e286b445c1cb31e42e423"
+    },
+    "create_metahuman/unreal_web_bake_inputs.py": {
+      "bytes": 6145,
+      "sha256": "8738c9b8f65db7ebf6bf06bf9b879404054ebad129532889a28fb799c63e7d3f"
+    },
+    "create_metahuman/unreal_web_capture.py": {
+      "bytes": 9844,
+      "sha256": "b3c100b8a33b4ed31e7b2a3d42f2cd6ead16fcd97e5886e7729a884079c6495f"
+    },
+    "create_metahuman/unreal_web_skin_motion.py": {
+      "bytes": 8197,
+      "sha256": "6e1fdfdbf6d03ff6a62d17fce38f7856332fdd1f05399e0e5ace1118dc538f3d"
+    },
+    "create_metahuman/unreal_web_textures.py": {
+      "bytes": 5499,
+      "sha256": "0b979717c0b63c3d2ee1912be9df8da3be65c714ab901ee56373f124292da55f"
+    },
+    "create_metahuman/vertex_contract.py": {
+      "bytes": 8240,
+      "sha256": "cd41bd5bfaad49b5378973490339c6766e952ffdb72e3157a87cfc8288049b3c"
+    },
+    "create_metahuman/volumetric_flow.py": {
+      "bytes": 4373,
+      "sha256": "f50aa04b83dd2303f450fb37df23a1ace4d573a021daa485d003e1168b56ce2e"
+    },
+    "create_metahuman/web_controls.py": {
+      "bytes": 6210,
+      "sha256": "9df1298a81ae89052621fe2293de077191be7f76d213ae96fd89c86df9c3aed5"
+    },
+    "create_metahuman/web_export.py": {
+      "bytes": 14577,
+      "sha256": "e1ff64f4ee60dd5f4d15fb808e34b710a300eb2168f89f4f832c8ed1f36fa4cb"
+    },
+    "create_metahuman/web_expressions.py": {
+      "bytes": 4957,
+      "sha256": "a1294b0272a2d226cb733d34f600d40960b156ee0f3928f06fa68180705d8076"
+    },
+    "create_metahuman/web_full_skin.py": {
+      "bytes": 6907,
+      "sha256": "d2f7d0a1ce9fd64ab7f2168f1ce66c513bbf576a8db9ef841b0b03e9e6665f6a"
+    },
+    "create_metahuman/web_grooms.py": {
+      "bytes": 12096,
+      "sha256": "1e5824ea9caa9a5d022072ff0ead68a90b012a21cbaedfa9952e627085b2953c"
+    },
+    "create_metahuman/web_lighting.py": {
+      "bytes": 13063,
+      "sha256": "7b3f10cc3026b4d8f5a02e20eca59c31f4b16f31a73cf9c1ab57a2fdf0b63e53"
+    },
+    "create_metahuman/web_materials.py": {
+      "bytes": 15648,
+      "sha256": "61a009bc32035360ac2377ff04b90c1c54763bf306a95ae18d959bdd5745d2a4"
+    },
+    "create_metahuman/web_native_materials.py": {
+      "bytes": 10725,
+      "sha256": "3d00af6139858602f652452e4561930dc71a84fd56014e42c0a667069fc4bb86"
+    },
+    "create_metahuman/web_native_pose_bank.py": {
+      "bytes": 4314,
+      "sha256": "a612cca4bfd2830b218cdf3e2c2992e55a518447169a28b75cff3d9f1927acb5"
+    },
+    "create_metahuman/web_preview.py": {
+      "bytes": 4492,
+      "sha256": "d7fa0e07bd8729f064576f03c3261257cab20b57213346e7c4619417c78f160f"
+    },
+    "create_metahuman/web_skin_motion.py": {
+      "bytes": 6208,
+      "sha256": "763ac1e0822416f65c72fbc4159eb97590f4afe05ee9991167658c3312c2d684"
+    },
+    "create_metahuman/web_vendor/manifest.json": {
+      "bytes": 3152,
+      "sha256": "1fe6dc07ca57ae51737ae39764fc87ddecf07569a8aa3ddb608b735c3384c7ff"
+    },
+    "create_metahuman/web_vendor/three/LICENSE": {
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    },
+    "create_metahuman/web_vendor/three/build/three.core.js": {
+      "bytes": 1458113,
+      "sha256": "9edde002b066a9a05676a6127f67735b62baf399bdea529f2f7e31657da769e6"
+    },
+    "create_metahuman/web_vendor/three/build/three.module.js": {
+      "bytes": 662772,
+      "sha256": "9052042d676cb0fdc1ddfefe193053f34b7ac0513a616fdac4535d49987812ea"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/controls/OrbitControls.js": {
+      "bytes": 40755,
+      "sha256": "3d79d07ecb686b4e5d93232eedab255331c1beef711e13164eaa1f68655a5f2b"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/environments/RoomEnvironment.js": {
+      "bytes": 4960,
+      "sha256": "55f466192cc84298755a424c5e040345006b2ee1455589b3b54126c2ea4123f4"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/libs/fflate.module.js": {
+      "bytes": 89384,
+      "sha256": "209a4412eb48ce609edb4391992a792ffcc3983d30ee7e2b0b89a8c470f3cd8a"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/lights/RectAreaLightTexturesLib.js": {
+      "bytes": 314764,
+      "sha256": "6dd4043bb052594357a5eeff13dc0519f0a80b100b97ec80c12808f887897bc1"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/lights/RectAreaLightUniformsLib.js": {
+      "bytes": 1014,
+      "sha256": "494fef2d731ff1689050cc6040ad78d927c22b9125a12f532beb0374c2811c6e"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/loaders/EXRLoader.js": {
+      "bytes": 86154,
+      "sha256": "1355b32a2ee1226bffd0f96558f3d21e300832813ab70d51ec971025ebc34d5d"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/loaders/GLTFLoader.js": {
+      "bytes": 117570,
+      "sha256": "131c0f78c01d19368ae495caa65b3adaa10487810a36a05bb5901b769a35ac16"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/utils/BufferGeometryUtils.js": {
+      "bytes": 37712,
+      "sha256": "9fb63427ce6641fa14fd0baff9cc4d1b5f9c3d85fd084bf2e90e803c44ec1797"
+    },
+    "create_metahuman/web_vendor/three/examples/jsm/utils/SkeletonUtils.js": {
+      "bytes": 11535,
+      "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f"
+    },
+    "create_metahuman/worker_lifetime.py": {
+      "bytes": 1253,
+      "sha256": "dd50156ffc546d906b4de88d0e9f455a73aab21a68f2c471bddfcb81be5045ba"
+    },
+    "create_metahuman/workflow.py": {
+      "bytes": 40689,
+      "sha256": "aa26695d56f75fd62cceb8e1e98601ac1027f85038220f834d0f015fcafe187d"
+    },
+    "create_metahuman/workflow_steps.py": {
+      "bytes": 448,
+      "sha256": "b521a8a84d2ca79f54963723f483b51dfb45961d0c30bc936e25b534f4ec29dd"
+    },
+    "create_metahuman/workspace_layout.py": {
+      "bytes": 7633,
+      "sha256": "6c5791c952889700bb6c67fd98f9b454d26f051104c475eb0b93502a848bff74"
+    },
+    "create_metahuman/wrap_interiors.py": {
+      "bytes": 5296,
+      "sha256": "5d12978bd4f304ea8cff80fa6a2798ff96a420363cbb2c8a2ae5a18780df9a92"
+    },
+    "create_metahuman/wrap_proxy.py": {
+      "bytes": 4223,
+      "sha256": "e3fbdcc5590bc3aaf235d179907723baf17f6c335a5bc76d0ecc4d1de486350d"
+    },
+    "create_metahuman/wrinkle_controls.py": {
+      "bytes": 2318,
+      "sha256": "1eabb8cb1402d5e4cb8728c522de6defab635371179e3f35827c090822c688b9"
+    },
+    "create_metahuman/wrinkle_jobs.py": {
+      "bytes": 11018,
+      "sha256": "8c4b0115774ea06eab22add8d17781db418578d56ac7686707e7f487852c7c1d"
+    },
+    "create_metahuman/wrinkle_ops.py": {
+      "bytes": 1867,
+      "sha256": "b533e072ad27564cb8e33fe740107d430a1dac3bf3bd5e1f41540531ef9d1425"
+    },
+    "create_metahuman/wrinkle_retarget.py": {
+      "bytes": 7999,
+      "sha256": "2c9f0ead0cbfd1e90fedc89b6d86ff666f2c149a52126a301155d9b7c731109d"
+    },
+    "create_metahuman/wrinkle_worker.py": {
+      "bytes": 1976,
+      "sha256": "64ca3ef3ba73731e1c382e7806a9083a24da6a464e0f6442592acaef03faef21"
+    },
+    "create_metahuman/wrinkles.py": {
+      "bytes": 28252,
+      "sha256": "5ba4dc9226c93cf6d81d6cb1effae69541263cd251cc30f067d4a7268d897298"
+    },
+    "docs/agents.md": {
+      "bytes": 4757,
+      "sha256": "97d02b25321ea2abd6062ebef3333dcf1a2425499d2d6017826d52d4a8c796bc"
+    },
+    "docs/development.md": {
+      "bytes": 4042,
+      "sha256": "b14acb16a9426b3a44b2a70f95c3d246d616d8773f4d679eb27c826ef530ff85"
+    },
+    "docs/installation.md": {
+      "bytes": 8127,
+      "sha256": "f023b076c745605a24c4f40dfbdbd1e11dbcc8ff9ee899dfb580377d72a47407"
+    },
+    "docs/known-issues.md": {
+      "bytes": 2492,
+      "sha256": "ab50ecdc2ea4e585db251d77c8410e2e070f5761c94ab08329cb1f42cdfd91f9"
+    },
+    "docs/launch.md": {
+      "bytes": 1615,
+      "sha256": "457aaf20b0a8ae8073c66cd9e183ef4a5f3191e24cfdcd2c0872ced3aa57c7df"
+    },
+    "docs/media/README.md": {
+      "bytes": 1381,
+      "sha256": "6631268f97aba1803a24a1a87d5ae1b61f9f91e4953ce89d424458981ee32bec"
+    },
+    "docs/media/agent-workflow.gif": {
+      "bytes": 327615,
+      "sha256": "1d1d218450298681d791cf5e0e815d4226b7f7ca335435f3823e0f26a7d709ca"
+    },
+    "docs/media/blender-workflow.jpg": {
+      "bytes": 80493,
+      "sha256": "d11b67aed29934e5f64e2148e39cf6dfd349596b7eb9cfc775240662c84f7a99"
+    },
+    "docs/media/genie-expressions.jpg": {
+      "bytes": 189551,
+      "sha256": "1bba5363b0f13615fd2b7effeb471370bb566dcc89b92f21ba97863fb300702a"
+    },
+    "docs/media/hero.jpg": {
+      "bytes": 170731,
+      "sha256": "f0083808ead29bbe66f40856f9411650595d99de722811dbd3d216346d27dd9c"
+    },
+    "docs/media/skin-maps.jpg": {
+      "bytes": 348964,
+      "sha256": "235a6aa6a6916c3ded6261b62e224ff48a0c3c385cd8babcaf04451268450483"
+    },
+    "docs/media/skin-reconstruction.jpg": {
+      "bytes": 191864,
+      "sha256": "e929df203abaf7f95650155bc10445d5419057375328fab33540b454803edbc6"
+    },
+    "docs/media/tree-mark.svg": {
+      "bytes": 1450,
+      "sha256": "66cf6eabcd748c9e023a3a7eaef762d7dc35ca69c816f8ce41e39b97282459d1"
+    },
+    "docs/media/unreal-editable.jpg": {
+      "bytes": 155974,
+      "sha256": "396a1d27b74e609cbed342e9d40fdd78c462dec05489cc9f9b8733c975698339"
+    },
+    "docs/quickstart.md": {
+      "bytes": 4186,
+      "sha256": "d24c946017ac8c4502eeb5dfba18947529efae24826aacd3c34952bdd57da8e2"
+    },
+    "docs/release-notes.md": {
+      "bytes": 2421,
+      "sha256": "ca1f3bcdbb3dd38ceaf8753d53e1b3abac95ab2ef15b3856696aa29048cfdda1"
+    },
+    "docs/releasing.md": {
+      "bytes": 2655,
+      "sha256": "369af02dff88249b9df1ffedaeb4f15d7bf9d8c34fc53dd46eced96378c789c4"
+    },
+    "docs/troubleshooting.md": {
+      "bytes": 3849,
+      "sha256": "ac3fcd5635b1f6693865c884aea373ffb639d2e1f4e5da2ed38504ebb335c9ce"
+    },
+    "docs/workflows.md": {
+      "bytes": 8459,
+      "sha256": "d32155975218d5f79b8c28f12a51bd388437ca1bc7e4ee033568b831dbd193d2"
+    },
+    "plugins/CreateMetaHumanBridge/CreateMetaHumanBridge.uplugin": {
+      "bytes": 787,
+      "sha256": "72ddcc30eb4a77529077565953a130bc89bb9b63b2c5fa2373d190b5df5843b7"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/CreateMetaHumanBridge.Build.cs": {
+      "bytes": 737,
+      "sha256": "31122d445a6d6344b8344eca577df8feb485e3f331cfd142b3b81b77a723492a"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHArtistLibrary.cpp": {
+      "bytes": 12920,
+      "sha256": "0031461b82f31aaadb120a4455cc554341ea5d63fb7696d27fa1f94a2546b78a"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHBodyLibrary.cpp": {
+      "bytes": 6286,
+      "sha256": "e3974e213aa47e30209e2fdcd8bce0a8580ff20b8f2e9a44ae82d52988c32f80"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHCalibrationLibrary.cpp": {
+      "bytes": 44717,
+      "sha256": "4aeeffeec3dfcebd25f9dede5ecade1460093320bec4dc6bcbb7ee466ff86f58"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHCharacterLibrary.cpp": {
+      "bytes": 10219,
+      "sha256": "31bf430cf85a42a6c444449a6b0394e136f70c2e6d849d2724ac00e8921cb515"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHDrivenTargets.cpp": {
+      "bytes": 13083,
+      "sha256": "b78f42463734089195520f584caf7430669d49be55015b0d8014564efe1c862b"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHExpressionLibrary.cpp": {
+      "bytes": 14688,
+      "sha256": "f728ca9584f27fb24c38ae3c0685996c178cd1093639372e37e65d62a807ea16"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHExpressionRuntime.cpp": {
+      "bytes": 30661,
+      "sha256": "db618fedd9c919aefd5ce69a2f2fc780a89669f94a6255922ffab221f26a48c7"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHGroomLibrary.cpp": {
+      "bytes": 6560,
+      "sha256": "f3b88d1ff685b7b261f3fe6260a75202bc3f747c76c2357fa76de3172216d762"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHPoseCorrectives.cpp": {
+      "bytes": 18646,
+      "sha256": "fa4802314b8b42386e4b459eefff3ae01cfc04b30038ae6419deca587c6590f0"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHSkinLibrary.cpp": {
+      "bytes": 8764,
+      "sha256": "57343096c7ceac429ac87db04cd084e1a6a5137980313fe5bdbef2d76697886f"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHArtistLibrary.h": {
+      "bytes": 1085,
+      "sha256": "9dad9ff9134417af4f1a6e32917b27f4ef07983458d75d4c8636905e5d64c9e5"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHBodyLibrary.h": {
+      "bytes": 473,
+      "sha256": "0771590f0bb2b0f985e851eea875f02f8d1503d4c6220164de2fdc844a5a25d8"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHCalibrationLibrary.h": {
+      "bytes": 4649,
+      "sha256": "4276e835c427ace6f93d26e380677dc092a56a0040410fd94440c8987e9d9722"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHCharacterLibrary.h": {
+      "bytes": 1716,
+      "sha256": "fdf9f65c1b6ad02b94127b83c28b1bc8fbe62dc945c298c3129207ce84915e81"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHExpressionLibrary.h": {
+      "bytes": 3542,
+      "sha256": "af6ecd5b91475d2d971e53a17224587e2d6c9aa85148868757ef9f3ff1c1d756"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHGroomLibrary.h": {
+      "bytes": 548,
+      "sha256": "0af82255f52783c49a80a879b8650f236deb606611874bddd1210eea705b0e5c"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHSkinLibrary.h": {
+      "bytes": 908,
+      "sha256": "ceaf48644fbf8c0286341cb2b7b094fe5a941edca8f2d5700225597951c60c11"
+    },
+    "release/models/marigold.json": {
+      "bytes": 7455,
+      "sha256": "509871cce189b63a4ab14e2896819c4f339e52d83c4909fec226b50e72dda843"
+    },
+    "release/models/pisa-sr.json": {
+      "bytes": 10658,
+      "sha256": "2392341043de9faa3dffb4b13c82f3e2963da4d4daedc5b0be107f664606dce1"
+    },
+    "release/models/texture-editor.json": {
+      "bytes": 6124,
+      "sha256": "428e1f4c787770c6fa9d0b8b667de99a5c3ccaf5618886afb328d8c1d5763ddf"
+    },
+    "tests/native_assembly_memory.py": {
+      "bytes": 5050,
+      "sha256": "726c6351afaf7e1b39d7746de0b57af6ca60dec2ac5a3df90d456398c22d4840"
+    },
+    "tests/release_source.py": {
+      "bytes": 4637,
+      "sha256": "38c6ca289b7467f2cdc332de4452e00b6e540805a4617eec9b27849dd6b4db2d"
+    },
+    "tools/build.py": {
+      "bytes": 3205,
+      "sha256": "471a131e63da0c2c8cbf3f55d22def8f4a3a68eca1e1da8304996c396578b36f"
+    },
+    "tools/build_groom_alembic.py": {
+      "bytes": 2633,
+      "sha256": "c4aeee99e2e0199b5f37ed23dc8740b967dffbfc2e8fc12b8ec9cf2d9f35e6f5"
+    },
+    "tools/convert_gnm_decoder.py": {
+      "bytes": 1126,
+      "sha256": "61b3187f70287e8775219af2e01a9dc517c8f82baea6751e3d175529cf5ad67c"
+    },
+    "tools/material_decomposition.py": {
+      "bytes": 5759,
+      "sha256": "da97e676301f18693f273e60331150dc710442d2dda712f54e4acccd1ce9f140"
+    },
+    "tools/material_superresolution.py": {
+      "bytes": 914,
+      "sha256": "508b9f123fe28525517676659f1baf7bf7ff67fd718903f96c464cc02ee9bc62"
+    },
+    "tools/package_files.py": {
+      "bytes": 1464,
+      "sha256": "8784b992b18b09b0e2980fe71ea3e5bb1c1544916ec42210294a47c47ffb0e36"
+    },
+    "tools/provision_material_decoder.py": {
+      "bytes": 165,
+      "sha256": "b2e8f0eeb075ed73a40861433faed5cc519412cb4f9ca9d1c34b2fa86f5475e5"
+    },
+    "tools/provision_material_sr.py": {
+      "bytes": 163,
+      "sha256": "5ac32c750ef494dd546571bc80bcee7daacb600d3897e2e235770252a37043c2"
+    },
+    "tools/provision_optional.py": {
+      "bytes": 6384,
+      "sha256": "e580a645988d760663b8564192f108b2ddd30dae142fb190581fe50032151c65"
+    },
+    "tools/provision_texture_editor.py": {
+      "bytes": 177,
+      "sha256": "cf72c4e9edd6b45deb5f637efc734a8634cc51a38857819d716c3ef4e8bde314"
+    },
+    "tools/setup_models.py": {
+      "bytes": 2438,
+      "sha256": "332fef1e0da7cc0578618f8424069d6bf97aabfa86540f4ed36e6217ad54c7a3"
+    },
+    "tools/setup_surface_solver.py": {
+      "bytes": 453,
+      "sha256": "5da00c36fc8ddeee33cd3e33a22836867e7e52e9cabd29962bdf05348d608986"
+    },
+    "tools/source_release.py": {
+      "bytes": 10720,
+      "sha256": "fd5ad7868034c3b55fe011989ef71e78440030660c883c1a0f97c53593cc276c"
+    },
+    "tools/verify_package.py": {
+      "bytes": 1949,
+      "sha256": "e8efa879bdfb6d5734338c341396f7b7bc875961aae8008930639407aaf97215"
+    }
+  },
+  "excluded": [
+    "build/",
+    "dist/",
+    "test-output/",
+    "demo/",
+    "research/",
+    "models/",
+    ".venv*/",
+    ".env*",
+    "web/",
+    "assets/",
+    "renders/",
+    "tests/ue_project/",
+    "plugins/**/Binaries/",
+    "plugins/**/Intermediate/",
+    "create_metahuman/native/cm_groom_alembic.exe"
+  ],
+  "limitations": [
+    "No claim of complete feature/platform parity or independent legal review",
+    "Source build requires separately installed Blender/UE/SDKs and a local native helper build"
+  ]
+}

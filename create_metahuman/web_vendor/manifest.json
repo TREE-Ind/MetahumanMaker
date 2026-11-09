@@ -1,0 +1,66 @@
+{
+  "package": "three",
+  "version": "0.186.1",
+  "files": {
+    "LICENSE": {
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/LICENSE"
+    },
+    "examples/jsm/loaders/GLTFLoader.js": {
+      "bytes": 117570,
+      "sha256": "131c0f78c01d19368ae495caa65b3adaa10487810a36a05bb5901b769a35ac16",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/loaders/GLTFLoader.js"
+    },
+    "examples/jsm/utils/SkeletonUtils.js": {
+      "bytes": 11535,
+      "sha256": "b1632a703206c3d830de9fcbe515696770d04b71a15ee6b50afa6d2c3298c86f",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/utils/SkeletonUtils.js"
+    },
+    "examples/jsm/utils/BufferGeometryUtils.js": {
+      "bytes": 37712,
+      "sha256": "9fb63427ce6641fa14fd0baff9cc4d1b5f9c3d85fd084bf2e90e803c44ec1797",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/utils/BufferGeometryUtils.js"
+    },
+    "examples/jsm/environments/RoomEnvironment.js": {
+      "bytes": 4960,
+      "sha256": "55f466192cc84298755a424c5e040345006b2ee1455589b3b54126c2ea4123f4",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/environments/RoomEnvironment.js"
+    },
+    "examples/jsm/controls/OrbitControls.js": {
+      "bytes": 40755,
+      "sha256": "3d79d07ecb686b4e5d93232eedab255331c1beef711e13164eaa1f68655a5f2b",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/controls/OrbitControls.js"
+    },
+    "build/three.module.js": {
+      "bytes": 662772,
+      "sha256": "9052042d676cb0fdc1ddfefe193053f34b7ac0513a616fdac4535d49987812ea",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js"
+    },
+    "build/three.core.js": {
+      "bytes": 1458113,
+      "sha256": "9edde002b066a9a05676a6127f67735b62baf399bdea529f2f7e31657da769e6",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.core.js"
+    },
+    "examples/jsm/lights/RectAreaLightUniformsLib.js": {
+      "bytes": 1014,
+      "sha256": "494fef2d731ff1689050cc6040ad78d927c22b9125a12f532beb0374c2811c6e",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/lights/RectAreaLightUniformsLib.js"
+    },
+    "examples/jsm/lights/RectAreaLightTexturesLib.js": {
+      "bytes": 314764,
+      "sha256": "6dd4043bb052594357a5eeff13dc0519f0a80b100b97ec80c12808f887897bc1",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/lights/RectAreaLightTexturesLib.js"
+    },
+    "examples/jsm/loaders/EXRLoader.js": {
+      "bytes": 86154,
+      "sha256": "1355b32a2ee1226bffd0f96558f3d21e300832813ab70d51ec971025ebc34d5d",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/loaders/EXRLoader.js"
+    },
+    "examples/jsm/libs/fflate.module.js": {
+      "bytes": 89384,
+      "sha256": "209a4412eb48ce609edb4391992a792ffcc3983d30ee7e2b0b89a8c470f3cd8a",
+      "source": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/libs/fflate.module.js"
+    }
+  }
+}

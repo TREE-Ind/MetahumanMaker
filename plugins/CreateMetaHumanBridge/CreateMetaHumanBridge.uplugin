@@ -1,0 +1,38 @@
+{
+  "FileVersion": 3,
+  "Version": 29,
+  "VersionName": "0.29.0",
+  "FriendlyName": "MetaHuman Maker Bridge",
+  "Description": "Local groom exchange, native DNA expressions and animated-map drivers, and anatomical body evaluation for Unreal Engine 5.8.",
+  "Category": "Editor",
+  "CanContainContent": false,
+  "Modules": [
+    {
+      "Name": "CreateMetaHumanBridge",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "HairStrands",
+      "Enabled": true
+    },
+    {
+      "Name": "RigLogic",
+      "Enabled": true
+    },
+    {
+      "Name": "MetaHumanCoreTech",
+      "Enabled": true
+    },
+    {
+      "Name": "MetaHumanCharacter",
+      "Enabled": true
+    },
+    {
+      "Name": "MetaHumanSDK",
+      "Enabled": true
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "schema": 1,
+  "destination": "models/texture-restoration/flux2-klein4b",
+  "reserve_gib": 18,
+  "extract_runtime": "runtime.zip",
+  "assets": [
+    {
+      "file": "flux-2-klein-4b-Q4_0.gguf",
+      "bytes": 2460378560,
+      "sha256": "d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4",
+      "source": "https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF/resolve/3b1f5a9dc3abb32238b053aeb3d823c30afdacbd/flux-2-klein-4b-Q4_0.gguf"
+    },
+    {
+      "file": "Qwen3-4B-Q4_K_M.gguf",
+      "bytes": 2497281312,
+      "sha256": "f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a",
+      "source": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/22c9fc8a8c7700b76a1789366280a6a5a1ad1120/Qwen3-4B-Q4_K_M.gguf"
+    },
+    {
+      "file": "full_encoder_small_decoder.safetensors",
+      "bytes": 249519092,
+      "sha256": "ea4273f02d1fafbf8e1d1c2cf6018ed8748652eb0bf34f2dd91171f16f15ab62",
+      "source": "https://huggingface.co/black-forest-labs/FLUX.2-small-decoder/resolve/a3efc24f613ef42d9428af62fdbd6f5fd8856c4a/full_encoder_small_decoder.safetensors"
+    },
+    {
+      "file": "runtime.zip",
+      "bytes": 29747358,
+      "sha256": "854cd219814e90ffd0a804a19bda60cdc04a7f89a6c52aa7e3b959227b495072",
+      "source": "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1024-77b72a2/sd-master-77b72a2-bin-win-vulkan-x64.zip"
+    },
+    {
+      "file": "model-README.md",
+      "bytes": 470,
+      "sha256": "799c1fed644dd6b43780da277423573ac4560dde275bb5727b82763e9a2721c1",
+      "source": "https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF/raw/3b1f5a9dc3abb32238b053aeb3d823c30afdacbd/README.md"
+    },
+    {
+      "file": "llm-README.md",
+      "bytes": 19797,
+      "sha256": "23125fc1abc416b9670af4efa6f1f13d20d408bff0c80fa4cc23179d40e8bfd4",
+      "source": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/raw/22c9fc8a8c7700b76a1789366280a6a5a1ad1120/README.md"
+    },
+    {
+      "file": "vae-README.md",
+      "bytes": 3862,
+      "sha256": "b8e19f407064ea4dbeaa2354d99a2bc0ccf0631fe427a4ad217663684c989b91",
+      "source": "https://huggingface.co/black-forest-labs/FLUX.2-small-decoder/raw/a3efc24f613ef42d9428af62fdbd6f5fd8856c4a/README.md"
+    },
+    {
+      "file": "runtime-LICENSE",
+      "bytes": 1062,
+      "sha256": "b53fa08f515cb5a6fff7b9fd8fcd0961a4b80df29d74372d25e1f9171aa042ee",
+      "source": "https://raw.githubusercontent.com/leejet/stable-diffusion.cpp/master-1024-77b72a2/LICENSE"
+    },
+    {
+      "file": "model-LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "source": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+    }
+  ],
+  "manifest": {
+    "schema": 1,
+    "source_model": "FLUX.2-klein-4B",
+    "quantized": true,
+    "runtime": "stable-diffusion.cpp Vulkan",
+    "assets": [
+      {
+        "name": "flux-2-klein-4b-Q4_0.gguf",
+        "size": 2460378560,
+        "sha256": "d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4",
+        "url": "https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF/resolve/3b1f5a9dc3abb32238b053aeb3d823c30afdacbd/flux-2-klein-4b-Q4_0.gguf",
+        "repo": "leejet/FLUX.2-klein-4B-GGUF",
+        "revision": "3b1f5a9dc3abb32238b053aeb3d823c30afdacbd",
+        "license": "apache-2.0"
+      },
+      {
+        "name": "Qwen3-4B-Q4_K_M.gguf",
+        "size": 2497281312,
+        "sha256": "f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a",
+        "url": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/resolve/22c9fc8a8c7700b76a1789366280a6a5a1ad1120/Qwen3-4B-Q4_K_M.gguf",
+        "repo": "unsloth/Qwen3-4B-GGUF",
+        "revision": "22c9fc8a8c7700b76a1789366280a6a5a1ad1120",
+        "license": "apache-2.0"
+      },
+      {
+        "name": "full_encoder_small_decoder.safetensors",
+        "size": 249519092,
+        "sha256": "ea4273f02d1fafbf8e1d1c2cf6018ed8748652eb0bf34f2dd91171f16f15ab62",
+        "url": "https://huggingface.co/black-forest-labs/FLUX.2-small-decoder/resolve/a3efc24f613ef42d9428af62fdbd6f5fd8856c4a/full_encoder_small_decoder.safetensors",
+        "repo": "black-forest-labs/FLUX.2-small-decoder",
+        "revision": "a3efc24f613ef42d9428af62fdbd6f5fd8856c4a",
+        "license": "apache-2.0"
+      },
+      {
+        "name": "runtime.zip",
+        "size": 29747358,
+        "sha256": "854cd219814e90ffd0a804a19bda60cdc04a7f89a6c52aa7e3b959227b495072",
+        "url": "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1024-77b72a2/sd-master-77b72a2-bin-win-vulkan-x64.zip",
+        "license": "MIT",
+        "revision": "master-1024-77b72a2"
+      }
+    ],
+    "production_quality_validated": false,
+    "uses_true_controlnet": false,
+    "notice_assets": [
+      {
+        "file": "model-README.md",
+        "bytes": 470,
+        "sha256": "799c1fed644dd6b43780da277423573ac4560dde275bb5727b82763e9a2721c1",
+        "source": "https://huggingface.co/leejet/FLUX.2-klein-4B-GGUF/raw/3b1f5a9dc3abb32238b053aeb3d823c30afdacbd/README.md"
+      },
+      {
+        "file": "llm-README.md",
+        "bytes": 19797,
+        "sha256": "23125fc1abc416b9670af4efa6f1f13d20d408bff0c80fa4cc23179d40e8bfd4",
+        "source": "https://huggingface.co/unsloth/Qwen3-4B-GGUF/raw/22c9fc8a8c7700b76a1789366280a6a5a1ad1120/README.md"
+      },
+      {
+        "file": "vae-README.md",
+        "bytes": 3862,
+        "sha256": "b8e19f407064ea4dbeaa2354d99a2bc0ccf0631fe427a4ad217663684c989b91",
+        "source": "https://huggingface.co/black-forest-labs/FLUX.2-small-decoder/raw/a3efc24f613ef42d9428af62fdbd6f5fd8856c4a/README.md"
+      },
+      {
+        "file": "runtime-LICENSE",
+        "bytes": 1062,
+        "sha256": "b53fa08f515cb5a6fff7b9fd8fcd0961a4b80df29d74372d25e1f9171aa042ee",
+        "source": "https://raw.githubusercontent.com/leejet/stable-diffusion.cpp/master-1024-77b72a2/LICENSE"
+      },
+      {
+        "file": "model-LICENSE",
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "source": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+      }
+    ]
+  }
+}

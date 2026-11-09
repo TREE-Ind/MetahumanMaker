@@ -49,6 +49,28 @@ def reorient_normals(base, detail,*,out=None):
     return result
 
 
+def native_expression_color_in_place(pixels, delta):
+    """Retarget native sRGB expression deltas onto a new linear-light albedo.
+
+    Native animated color decodes as base + (delta - .5) * .5 in sRGB.
+    Retaining this field preserves expression-specific crease/pigment changes,
+    instead of replacing them with a nearly neutral regional red tint.
+    """
+    pixels,delta=np.asarray(pixels),np.asarray(delta)
+    if (pixels.shape[:-1]!=delta.shape[:-1] or pixels.shape[-1] not in (3,4) or
+            delta.shape[-1] not in (3,4) or pixels.dtype.kind!='f' or not pixels.flags.c_contiguous):
+        raise ValueError('Native expression color needs matching floating-point albedo and delta pixels')
+    output=pixels.reshape(-1,pixels.shape[-1]);reference=delta.reshape(-1,delta.shape[-1])
+    for first in range(0,len(output),65536):
+        block=output[first:first+65536,:3];change=reference[first:first+65536,:3]
+        if not np.isfinite(block).all() or not np.isfinite(change).all() or np.any((change<0)|(change>1)):
+            raise ValueError('Native expression color contains invalid pixels')
+        encoded=np.where(block<=.0031308,block*12.92,1.055*np.maximum(block,0)**(1/2.4)-.055)
+        encoded+=(change-.5)*.5;np.clip(encoded,0,1,out=encoded)
+        block[:]=np.where(encoded<=.04045,encoded/12.92,((encoded+.055)/1.055)**2.4)
+    return pixels
+
+
 def tint_bloodflow_in_place(pixels, influence, strength):
     """Apply the artistic CM channel tint in the caller's pixel color domain."""
     pixels, influence = np.asarray(pixels), np.asarray(influence)

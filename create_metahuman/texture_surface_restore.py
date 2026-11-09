@@ -24,6 +24,11 @@ def candidate(source,mask,valid,geometry,*,backend,expected,folder,strength=1,
             'method':'LEARNED','layout':'SURFACE','invention':invention,'inference_skipped':True,
             'physical_albedo_recovered':False,'generated_detail_is_ground_truth':False}
     surface=Surface(*geometry)
+    if not preserve_structure and invention>=.85:
+        from texture_region_completion import guarded_region
+        # Preserve the existing paired-chart boundary colors while allowing
+        # creative reconstruction throughout the selected chart interiors.
+        mask,_=guarded_region(mask,valid,radius=8)
     head_scale=float(np.median(np.ptp(surface.points,axis=0)))
     spans=(head_scale*.08,head_scale*.15) if output_scale==2 else None
     cameras,planning=plan(surface,source,mask*valid,protect,limit=128 if output_scale==2 else 48,progress=progress,span_limits=spans)
@@ -50,8 +55,12 @@ def candidate(source,mask,valid,geometry,*,backend,expected,folder,strength=1,
         if index==0:
             for name,key in [('color','color'),('normal','normal'),('depth','depth')]:
                 Image.fromarray(np.rint(np.clip(render[key],0,1)*255).astype('uint8')).save(folder/('surface-guide-'+name+'.png'))
-        prompt=('Restore this exact continuous surface patch of skin. Preserve the position and shape '
-            'of existing creases, scars and pigmentation. Remove checker patterns and projection smearing. '
+        structure=('Preserve the position and shape of existing creases, scars and pigmentation. '
+            if preserve_structure else
+            'Retain the broad complexion and anatomical layout of the reference, but reconstruct damaged '
+            'pigment and surface detail. Do not preserve corrupted outlines, smeared creases or baked artifacts. ')
+        prompt=('Restore this exact continuous surface patch of skin. '+structure+
+            'Remove checker patterns and projection smearing. '
             'Flat unlit base color, no new shadows or highlights. Permitted detail: '+brief)
         prior_folder=folder/('surface-prior-'+str(index))
         require('surface detail model',5*GIB)
@@ -66,14 +75,35 @@ def candidate(source,mask,valid,geometry,*,backend,expected,folder,strength=1,
         # Solve the continuous context before masking atlas publication. Strict
         # source constraints just outside a small repair selection otherwise
         # feed contaminated frequencies back through the patch-wide transform.
-        result,_,info=restore(render['color'],prior,valid=render['valid'].astype(np.float32),
-            protect=protected,strength=strength*invention,detail_limit=.025+.225*invention,
-            periodic=render['valid'].astype(np.float32),artifact_repair=True,trusted_band=band,pattern_exception=patterns)
+        if not preserve_structure and invention>=.85:
+            # Explicit creative reconstruction must be allowed to replace bad
+            # pigment, rather than being projected back onto that same pigment.
+            # Match only the patch-wide palette; keep the model's fine detail.
+            generated=linear(prior)
+            reference=linear(render['color'])
+            visible=render['valid']>0
+            if protected is not None:visible &= protected<.5
+            if not np.any(visible):continue
+            resized=resize(reference,(generated.shape[1],generated.shape[0]))
+            palette=np.median(reference[visible],axis=0)
+            proposal_palette=np.median(generated.reshape(-1,3),axis=0)
+            gain=np.clip(palette/np.maximum(proposal_palette,.01),.65,1.5)
+            generated=np.clip(generated*gain,0,1)
+            result=np.clip(resized+(generated-resized)*(strength*invention),0,1)
+            # project() below accepts linear light, unlike restore()'s sRGB.
+            projected_color=result
+            info={'method':'GENERATIVE_SURFACE_REPLACEMENT','source_structure_lock':False,
+                  'palette_gain':gain.tolist(),'inferred':True}
+        else:
+            result,_,info=restore(render['color'],prior,valid=render['valid'].astype(np.float32),
+                protect=protected,strength=strength*invention,detail_limit=.025+.225*invention,
+                periodic=render['valid'].astype(np.float32),artifact_repair=True,trusted_band=band,pattern_exception=patterns)
+            projected_color=linear(result)
         projection=surface.render(source,camera,size=512*output_scale) if output_scale==2 else render
         if output_scale==2:
-            surface.project(linear(result),projection,original,mapped,output_protect,accumulate=(sums,weights),cache=projection_cache)
+            surface.project(projected_color,projection,original,mapped,output_protect,accumulate=(sums,weights),cache=projection_cache)
         else:
-            patch_sums,patch_weights=surface.project(linear(result),projection,original,mapped,output_protect)
+            patch_sums,patch_weights=surface.project(projected_color,projection,original,mapped,output_protect)
             sums+=patch_sums;weights+=patch_weights
         details.append({'camera':camera,'depth_range':render['depth_range'],'prior':prior_report,'constraints':info,
                         'model_context':conditioning})

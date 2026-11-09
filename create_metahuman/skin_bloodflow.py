@@ -1,7 +1,30 @@
 """Keep generated expression color maps tied to the accepted skin albedo."""
 import json
+import hashlib
+from pathlib import Path
 
 from . import map_provenance
+
+
+def native_reference(scene,slot):
+    """Read an explicitly retained native expression response for this face."""
+    root=map_provenance.folder(scene).parent.resolve()/'ReferenceMaps'
+    manifest=root/'native-expression-color.json'
+    if not manifest.is_file():return None
+    value=json.loads(manifest.read_text(encoding='utf-8'))
+    if (value.get('schema')!=1 or value.get('encoding')!='UE_ANIMATED_DELTA_V1' or
+            value.get('character')!=scene.cm_features.unreal_character):
+        raise ValueError('The retained expression-color reference belongs to another native character')
+    from . import skin_projection
+    if value.get('uv_layout')!=skin_projection.uv_layout_signature(scene.cm_settings.result):
+        raise ValueError('The retained expression-color reference has another face UV layout')
+    record=value.get('maps',{}).get(slot)
+    if not record:raise ValueError('The retained native expression set is incomplete: '+slot)
+    path=(root/record['file']).resolve()
+    if not path.is_relative_to(root.resolve()) or not path.is_file():raise ValueError('The native expression reference left this character project')
+    with path.open('rb') as stream:sha=hashlib.file_digest(stream,'sha256').hexdigest()
+    if sha!=record['sha256']:raise ValueError('The retained native expression response changed: '+slot)
+    return dict(record,path=str(path))
 
 
 def plan(scene, role):
@@ -58,5 +81,8 @@ def record(scene, slots, previous=None):
     dependencies = {albedo: _hash(map_provenance.folder(scene)/albedo)}
     for slot in slots:
         name = scene.cm_settings.character_name+'_'+slot+'.png'
+        reference=native_reference(scene,slot)
+        details={'dependencies':dependencies}
+        if reference:details.update(native_expression_sha256=reference['sha256'],native_expression_encoding='UE_ANIMATED_DELTA_V1')
         map_provenance.record(scene, {slot: map_provenance.signature(scene, slot)},
-            recipe='BLOODFLOW_ALBEDO', outputs={name}, details={name: {'dependencies': dependencies}})
+            recipe='BLOODFLOW_ALBEDO', outputs={name}, details={name:details})

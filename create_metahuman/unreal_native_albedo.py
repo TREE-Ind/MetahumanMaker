@@ -172,8 +172,11 @@ def update(request_path):
             texture.get_editor_property('asset_import_data').scripted_add_filename(item['source'], 0, '')
             imported[item['role']] = texture
             report['updated'].append(dict(role=item['role'], kind='ALBEDO', asset=target, source=item['source'], sha256=item['sha256']))
-        for role, key, material in custom:
-            name = 'Albedo_' + folder.name + '_' + role + '_' + str(key or 'Body')
+        for slot_index, (role, key, material) in enumerate(custom):
+            # Unreal enum reprs include angle brackets, spaces and colons.
+            # These private names need only a unique request-owned slot ID;
+            # preserve the actual enum key for its native material binding.
+            name = 'Albedo_' + folder.name + '_' + role + '_' + str(slot_index)
             if unreal.EditorAssetLibrary.does_asset_exist(root + '/Materials/' + name):
                 raise ValueError('Albedo material already exists for this request; inspect its receipt')
             private = tools.duplicate_asset(name, root + '/Materials', material)

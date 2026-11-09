@@ -686,6 +686,14 @@ def bake_bloodflow(context,s,f,slot=None):
     try:
         image.colorspace_settings.name='sRGB';image.alpha_mode='NONE'
         width,height=image.size;pixels=resample_image(image,width,height)
+        from . import skin_bloodflow
+        reference=skin_bloodflow.native_reference(context.scene,'CM'+slot[-1])
+        if reference:
+            delta=bpy.data.images.load(reference['path'],check_existing=False)
+            try:
+                delta.colorspace_settings.name='Non-Color'
+                surface_maps.native_expression_color_in_place(pixels,resample_image(delta,width,height))
+            finally:bpy.data.images.remove(delta)
         influence=resample_image(mask,width,height)[...,:3].mean(2)
         surface_maps.tint_bloodflow_in_place(pixels,influence,f.bloodflow_strength)
         cm=bpy.data.images.new(s.character_name+'_CM'+slot[-1],width=width,height=height,alpha=False)

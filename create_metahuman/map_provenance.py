@@ -168,6 +168,9 @@ def signature(scene,key,cache=None,*,recipe='FINAL',include_retained=True):
         values={'color_resolution':'SAVED_ALBEDO','tint':f.bloodflow_strength,
             'mask':image_digest(getattr(f,'wm'+key[-1]+'_mask'),cache),
             'albedo':hashlib.sha256(albedo.read_bytes()).hexdigest() if albedo.is_file() else None}
+        from . import skin_bloodflow
+        reference=skin_bloodflow.native_reference(scene,key)
+        if reference:values['native_expression_sha256']=reference['sha256']
         return hashlib.sha256(json.dumps(values,sort_keys=True).encode()).hexdigest()
     head,detail=target(scene,key)
     source_size=None

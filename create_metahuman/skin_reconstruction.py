@@ -623,6 +623,11 @@ def start(context,*,refresh=False,defer=False,surface_reference=None):
                 inputs[name]={'file':destination.name,'sha256':_hash(destination)}
                 local[field]=name
             normal_steps.append(local)
+    for slot in bloodflow:
+        reference=skin_bloodflow.native_reference(context.scene,slot)
+        if reference:
+            name='native_expression_'+slot+'.png';shutil.copy2(reference['path'],folder/name)
+            inputs['native_expression_'+slot]={'file':name,'sha256':_hash(folder/name)}
     request = {'schema':1,'role':role,'parent':None if defer else os.getpid(),'strength':f.skin_solver_strength,'inputs':inputs,
         'cleanup_floor':f.skin_solver_floor,'relief_strength':f.skin_solver_relief,
         'relief_radius':f.skin_solver_relief_radius,'surface_repair':f.skin_solver_surface_repair,

@@ -165,6 +165,10 @@ def character_action(context, open_editor=False, build=False, eye_options=None,a
         from . import unreal_assembly
         build_options={'root':f.unreal_build_root,'name':s.character_name,'profile':f.unreal_build_profile,
                        'allow_low_memory':f.unreal_build_allow_low_memory,'preserve_source_textures':f.unreal_build_preserve_source_textures,'eye_overlay_policy':f.unreal_eye_overlay_policy}
+        try:previous_build=json.loads(f.unreal_build_report or '{}')
+        except ValueError:previous_build={}
+        existing=unreal_assembly.linked_blueprint(build_options,previous_build,f.unreal_character)
+        if existing:build_options['existing_blueprint']=existing
         unreal_assembly.options(build_options)
     engine = bpy.path.abspath(s.unreal_engine_dir)
     if not (Path(engine) / 'Engine/Plugins/Experimental/PythonScriptPlugin/Content/Python/remote_execution.py').is_file():

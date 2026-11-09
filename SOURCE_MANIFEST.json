@@ -5,8 +5,8 @@
   "license": "MIT",
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
-  "file_count": 444,
-  "total_bytes": 8763150,
+  "file_count": 446,
+  "total_bytes": 8779763,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -171,6 +171,10 @@
     "create_metahuman/calibration_math.py": {
       "bytes": 3983,
       "sha256": "9bb5b33651ea5250479a48250a6cb053a67dc6c9b10e82e924e87cd3aa9d5699"
+    },
+    "create_metahuman/canonical_recovery.py": {
+      "bytes": 3703,
+      "sha256": "35cfc39ea7bbf8a4973251cf50cd9cfec6f26e1cf2d61c1bd76c0ba94da1d9dc"
     },
     "create_metahuman/capture_storage.py": {
       "bytes": 2257,
@@ -344,6 +348,10 @@
       "bytes": 3428,
       "sha256": "966b59b36b5f218fe0f3008b1f517e8996e6da66c2bc13155a1de5c24a60413f"
     },
+    "create_metahuman/groom_texture.py": {
+      "bytes": 4077,
+      "sha256": "60262e872bd0d0c9598554b0b90e24be6f39f5942f2fe0702a7b5a70ce16e61b"
+    },
     "create_metahuman/grooming.py": {
       "bytes": 53327,
       "sha256": "2e9f3b9dd158c2e4069226412521148fc933ccbbd5c76d96bbb19aa1bd3df984"
@@ -421,8 +429,8 @@
       "sha256": "e350d5df6caf33be25c8ed530c5327f90cf820540151218dc4f47f9ec809ee3c"
     },
     "create_metahuman/map_provenance.py": {
-      "bytes": 25791,
-      "sha256": "13f14fa01957b63d1d10521dd973111ac160ead30ad6500121be789ad5a07da2"
+      "bytes": 25965,
+      "sha256": "a338ef44071789f50cf4b0e4d8a795467e1dfe921e811b7946ef1a299238173e"
     },
     "create_metahuman/mesh_ops.py": {
       "bytes": 59706,
@@ -909,8 +917,8 @@
       "sha256": "cfd6289ed53f6a8da7276b09deabdf5e52ac4d33818f93bf2c6785c99b6616da"
     },
     "create_metahuman/skin_bloodflow.py": {
-      "bytes": 2748,
-      "sha256": "24cad6a7cdc4ec2a192ed70fac5f41a501383395c2cac3a1b967bf5f2108372f"
+      "bytes": 4366,
+      "sha256": "37d4ea3b41eedcfb7f4ff7ba1b17c0f26453b73649a33bcc0e42e308f3b23592"
     },
     "create_metahuman/skin_brushes.py": {
       "bytes": 15261,
@@ -949,16 +957,16 @@
       "sha256": "c413d166f58af40cc03e50984bd5b03cce889b85892b0b504054a3a04c74f6c2"
     },
     "create_metahuman/skin_reconstruction.py": {
-      "bytes": 79688,
-      "sha256": "54b7aeb2c19ea4d6b04e87709112c9f3b53894996d5e9360c0df70258b4a1007"
+      "bytes": 79989,
+      "sha256": "a438f46cb034505d41071dce07c8a466bda57ee07f57f787067fbfeeb5642ea7"
     },
     "create_metahuman/skin_reconstruction_core.py": {
       "bytes": 18965,
       "sha256": "dec7045cef498b36bfaab9fb05b0bb26d30bd7fba26cc30810dd881914352edc"
     },
     "create_metahuman/skin_reconstruction_worker.py": {
-      "bytes": 33566,
-      "sha256": "92833ba94c1f45bdf5ed779e8eeabe528285277c6eb4438aac4e3a0440d6d460"
+      "bytes": 33912,
+      "sha256": "6a4ad2fe6f6164ceeca4d1ae29204b45db55102d8cef8dae2716b5ffb6beb411"
     },
     "create_metahuman/skin_region_continuation.py": {
       "bytes": 4905,
@@ -1129,8 +1137,8 @@
       "sha256": "6962732b417e04bfe28b0f57b06931d218132e35162d9e324c3b8e483b078866"
     },
     "create_metahuman/surface_maps.py": {
-      "bytes": 3645,
-      "sha256": "32e0cb05d9cd3072bd781e566fe2218905b73e7f68ee6a356845d8c90867eda9"
+      "bytes": 5017,
+      "sha256": "a75ff4b0dcbaf4fd09b580a3f7089a4a53ee88e62420f9f6e5587d55e6f674a0"
     },
     "create_metahuman/surface_normal_continuation.py": {
       "bytes": 16002,
@@ -1209,16 +1217,16 @@
       "sha256": "a81a1f0889764f886b71bd52843780421bdbd34d3b2f96a6ba45b8bc2406f28e"
     },
     "create_metahuman/texture_surface_restore.py": {
-      "bytes": 7282,
-      "sha256": "f406d14fb6c39ad380ed1fa3af34706cf4b56045916bf2ca83f524ee64613b6a"
+      "bytes": 9156,
+      "sha256": "d8a9d67771ef9c19e509fb1588387b04befed02e909929d28296a5d2d56a36d7"
     },
     "create_metahuman/texture_update.py": {
       "bytes": 10300,
       "sha256": "6304c20290436047e0ca942de3f79606bda3022f7d6ff1f5cfd52b520343e095"
     },
     "create_metahuman/textures.py": {
-      "bytes": 35580,
-      "sha256": "2c2de0950df1c4a9dc8a80a606adcc515507c17e2a5dc60bd9f499abdc7fa70a"
+      "bytes": 36028,
+      "sha256": "dbf478ae3b39a8f64484185fee4ba61cf9ac0fa8c1191d59ddc2e441306f1423"
     },
     "create_metahuman/unreal_actor_preview.py": {
       "bytes": 7102,
@@ -1229,8 +1237,8 @@
       "sha256": "e198d1b833eeaf1b83efcccc2e96cbccc6f1dbf879e32ca0d0bb6d790e908ebe"
     },
     "create_metahuman/unreal_assembly.py": {
-      "bytes": 16678,
-      "sha256": "00e0301d834e40eb802788f3a459449af85bab69b29efa9f829111c374e7b86e"
+      "bytes": 18852,
+      "sha256": "5089d1cbedc08fdee6f2d923a2caf6974f769f2effdfe84c4bae085ab43f44e6"
     },
     "create_metahuman/unreal_assembly_auxiliary.py": {
       "bytes": 4313,
@@ -1301,8 +1309,8 @@
       "sha256": "0e1cde01148cf84254e2e432b0fa352127ab8b3eaa065010fb518bd92bf55fa5"
     },
     "create_metahuman/unreal_jobs.py": {
-      "bytes": 54905,
-      "sha256": "eea03fc3f5d3a31f30bc011c18d50e6b12f79296da418aa71d52d8e60a6a4f8f"
+      "bytes": 55182,
+      "sha256": "b813f48f908165c1438824687b80f4b0c92b17581a27e45635b0bc23f05d2b5b"
     },
     "create_metahuman/unreal_lash_fit.py": {
       "bytes": 17473,
@@ -1325,8 +1333,8 @@
       "sha256": "90170044f6a2c7b47c38e1be2c6438a0c68d1b0cd9e311791da66247616d5a84"
     },
     "create_metahuman/unreal_native_albedo.py": {
-      "bytes": 18591,
-      "sha256": "8ce41a1a15d73d3d1c8a90eaba83f93cee1c677ab702a40be93f3f6ccdf4ee3d"
+      "bytes": 18840,
+      "sha256": "138b72deb79dc9dc035a3b6222e19b1f5edae4dad237bcbece3bc6a6eda0ec0d"
     },
     "create_metahuman/unreal_native_animated.py": {
       "bytes": 2974,

@@ -59,7 +59,28 @@ def options(value):
     if type(value.get('preserve_source_textures',True)) is not bool:raise ValueError('Choose a supported source texture resolution policy')
     if type(value.get('allow_low_memory',False)) is not bool:raise ValueError('Low-memory assembly must be an explicit boolean choice')
     if value.get('eye_overlay_policy','NATIVE') not in {'NATIVE','OPAQUE_SOURCE'}:raise ValueError('Choose a supported assembled eye-overlay policy')
+    existing=value.get('existing_blueprint','')
+    if existing:
+        if not isinstance(existing,str):raise ValueError('Choose a saved assembled Blueprint to update')
+        target,separator,object_name=existing.rpartition('.')
+        folder,_,asset_name=target.rpartition('/')
+        parent,_,chosen=folder.rpartition('/')
+        if (not separator or parent!=root or asset_name!='BP_'+chosen or object_name!=asset_name or
+                not re.fullmatch(re.escape(name)+r'(?:_v\d{3,})?',chosen)):
+            raise ValueError('The existing assembly must match this character name and build folder')
     return root,name,profile
+
+
+def linked_blueprint(value,receipt,character):
+    """Reuse only the completed assembly linked to this exact Creator asset."""
+    if (receipt.get('status')!='complete' or receipt.get('character')!=character or
+            receipt.get('build',{}).get('state')!='COMPLETE'):return ''
+    candidate=receipt['build'].get('blueprint','')
+    if not candidate:return ''
+    proposed=dict(value,existing_blueprint=candidate)
+    try:options(proposed)
+    except ValueError:return ''
+    return candidate
 
 
 def actor_meshes(blueprint):
@@ -145,14 +166,24 @@ def assemble(asset_path,build_options,expected_project='',progress_path=None):
         if not subsystem.can_build_meta_human(character,False):
             report.update(status='failed',error='Character readiness changed. Refresh Creator status before assembly')
             return report
+        existing=build_options.get('existing_blueprint','')
         ordinal=1;chosen=name
-        while True:
-            target=root+'/'+chosen
-            disk=content/target.removeprefix('/Game/')
-            if not unreal.EditorAssetLibrary.does_directory_exist(target) and not disk.exists():break
-            ordinal+=1;chosen=name+'_v'+str(ordinal).zfill(3)
+        if existing:
+            previous=unreal.load_asset(existing)
+            if (not isinstance(previous,unreal.Blueprint) or
+                    not unreal.EditorAssetLibrary.get_metadata_tag(previous,'MHExportQuality')):
+                raise ValueError('The linked assembly is missing or is not a generated MetaHuman Blueprint')
+            owner=unreal.EditorAssetLibrary.get_metadata_tag(previous,'MetaHumanMaker.SourceCharacter')
+            if owner and owner!=character.get_path_name():raise ValueError('The existing assembly belongs to another Creator character')
+            target=existing.rsplit('/',1)[0];chosen=target.rsplit('/',1)[1]
+        else:
+            while True:
+                target=root+'/'+chosen
+                disk=content/target.removeprefix('/Game/')
+                if not unreal.EditorAssetLibrary.does_directory_exist(target) and not disk.exists():break
+                ordinal+=1;chosen=name+'_v'+str(ordinal).zfill(3)
         blueprint_path=target+'/BP_'+chosen
-        report['build'].update(state='BUILDING',output_folder=target,blueprint=blueprint_path)
+        report['build'].update(state='BUILDING',output_folder=target,blueprint=blueprint_path,updated_existing=bool(existing))
         if progress_path:
             Path(progress_path).write_text(json.dumps({'phase':'Assembling '+chosen+' in Unreal...',
                 'output_folder':target,'profile':profile}),encoding='utf-8')
@@ -200,6 +231,8 @@ def assemble(asset_path,build_options,expected_project='',progress_path=None):
         blueprint=unreal.load_asset(blueprint_path)
         if not isinstance(blueprint,unreal.Blueprint):
             raise RuntimeError('Native assembly did not produce its actor Blueprint. Inspect the MetaHuman Message Log; partial assets were retained at '+target)
+        if existing and blueprint.get_path_name()!=existing:raise RuntimeError('Native assembly returned a different Blueprint while updating the linked character')
+        unreal.EditorAssetLibrary.set_metadata_tag(blueprint,'MetaHumanMaker.SourceCharacter',character.get_path_name())
         quality_marker=unreal.EditorAssetLibrary.get_metadata_tag(blueprint,'MHExportQuality')
         if not quality_marker:
             raise RuntimeError('Native assembly did not reach its final actor update. Inspect the MetaHuman Message Log; partial assets were retained at '+target)

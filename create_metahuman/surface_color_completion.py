@@ -23,9 +23,15 @@ def complete(source,region,geometry,*,unknown=None,protect=None,strength=1.):
         if protect.shape!=region.shape or not np.isfinite(protect).all() or protect.min()<0 or protect.max()>1:raise ValueError('Surface completion protection is invalid')
         region=region*(1-protect)
     if not np.any(region>0) or strength==0:return source.copy(),dict(method='SURFACE_HARMONIC_COLOR',changed_texels=0,inferred=True,inference_skipped=True)
+    # UV splits must share one physical unknown and one set of donors. Keep
+    # positions distinct above native numerical precision (never bridge fingers).
+    tolerance=max(float(np.linalg.norm(np.ptp(points,axis=0)))*1e-7,1e-10)
+    _,canonical,weld=np.unique(np.rint(points/tolerance).astype(np.int64),axis=0,return_index=True,return_inverse=True)
+    faces=weld[faces];points=points[canonical]
+    if np.any(np.diff(np.sort(faces,axis=1),axis=1)==0):raise ValueError('Surface completion contains collapsed welded faces')
     used,local=np.unique(faces,return_inverse=True);faces=local.reshape(-1,3);points=points[used];height,width=region.shape
-    pixel=uv*np.array([width-1,-(height-1)])+[0,height-1]
-    if pixel[:,:,0].min()<-1e-4 or pixel[:,:,0].max()>width-1+1e-4 or pixel[:,:,1].min()<-1e-4 or pixel[:,:,1].max()>height-1+1e-4:raise ValueError('Localize the skin UV tile before surface completion')
+    pixel=uv*np.array([width,-height])+[-.5,height-.5]
+    if pixel[:,:,0].min()<-.5001 or pixel[:,:,0].max()>width-.4999 or pixel[:,:,1].min()<-.5001 or pixel[:,:,1].max()>height-.4999:raise ValueError('Localize the skin UV tile before surface completion')
     def sample(image):
         x=pixel[:,:,0].clip(0,width-1);y=pixel[:,:,1].clip(0,height-1);ix=x.astype(int);iy=y.astype(int);jx=np.minimum(ix+1,width-1);jy=np.minimum(iy+1,height-1);tx=x-ix;ty=y-iy
         if image.ndim==3:tx=tx[:,:,None];ty=ty[:,:,None]
@@ -39,16 +45,33 @@ def complete(source,region,geometry,*,unknown=None,protect=None,strength=1.):
     free=np.flatnonzero(marked);fixed=np.flatnonzero(~marked);lap=sparse.diags(np.asarray(adjacency.sum(1)).ravel())-adjacency
     if len(free):values[free]=spsolve(lap[free][:,free].tocsc(),-lap[free][:,fixed]@values[fixed])
     if not np.isfinite(values).all() or values.min()<-1e-7 or values.max()>1+1e-7:raise ValueError('Surface color completion failed its bounded harmonic solve')
-    y,x=np.nonzero(region>0);x0,x1=int(x.min()),int(x.max())+1;y0,y1=int(y.min()),int(y.max())+1;proposal=np.zeros((y1-y0,x1-x0,3),dtype=np.float32);covered=np.zeros(proposal.shape[:2],bool);active=region[y0:y1,x0:x1]>0;conflict=0.
+    y,x=np.nonzero(region>0);x0,x1=int(x.min()),int(x.max())+1;y0,y1=int(y.min()),int(y.max())+1;proposal=np.zeros((y1-y0,x1-x0,3),dtype=np.float32);covered=np.zeros(proposal.shape[:2],bool);active=region[y0:y1,x0:x1]>0;conflict=0.;distance=np.full(proposal.shape[:2],np.inf)
     for face,xy in zip(faces,pixel):
-        lo=np.maximum(np.floor(xy.min(0)).astype(int),[x0,y0]);hi=np.minimum(np.ceil(xy.max(0)).astype(int)+1,[x1,y1])
+        lo=np.maximum(np.floor(xy.min(0)).astype(int)-1,[x0,y0]);hi=np.minimum(np.ceil(xy.max(0)).astype(int)+2,[x1,y1])
         if np.any(hi<=lo):continue
         if not active[lo[1]-y0:hi[1]-y0,lo[0]-x0:hi[0]-x0].any():continue
         a,b=xy[1]-xy[0],xy[2]-xy[0];det=a[0]*b[1]-a[1]*b[0]
         if abs(det)<1e-12:continue
-        xx,yy=np.meshgrid(np.arange(lo[0],hi[0]),np.arange(lo[1],hi[1]));q=np.stack((xx,yy),axis=-1)-xy[0];u=(q[:,:,0]*b[1]-q[:,:,1]*b[0])/det;v=(a[0]*q[:,:,1]-a[1]*q[:,:,0])/det;inside=(u>=-1e-7)&(v>=-1e-7)&(u+v<=1+1e-7);sy=slice(lo[1]-y0,hi[1]-y0);sx=slice(lo[0]-x0,hi[0]-x0);inside&=active[sy,sx];field=values[face[0]]*(1-u-v)[:,:,None]+values[face[1]]*u[:,:,None]+values[face[2]]*v[:,:,None];old=proposal[sy,sx];duplicate=inside&covered[sy,sx]
+        xx,yy=np.meshgrid(np.arange(lo[0],hi[0]),np.arange(lo[1],hi[1]))
+        q=np.stack((xx,yy),axis=-1)-xy[0]
+        u=(q[:,:,0]*b[1]-q[:,:,1]*b[0])/det
+        v=(a[0]*q[:,:,1]-a[1]*q[:,:,0])/det
+        edge0=np.linalg.norm(xy[1]-xy[2]);edge1=np.linalg.norm(xy[0]-xy[2]);edge2=np.linalg.norm(xy[0]-xy[1])
+        # Signed distances to each triangle edge select the nearest face in
+        # the explicitly painted one-texel filter gutter. Interior UV overlaps
+        # still undergo the original color-conflict rejection below.
+        quality=np.maximum.reduce((-u*abs(det)/max(edge1,1e-12),
+            -v*abs(det)/max(edge2,1e-12),-(1-u-v)*abs(det)/max(edge0,1e-12),np.zeros_like(u)))
+        inside=(u>=-edge1/abs(det))&(v>=-edge2/abs(det))&(1-u-v>=-edge0/abs(det))
+        sy=slice(lo[1]-y0,hi[1]-y0);sx=slice(lo[0]-x0,hi[0]-x0)
+        inside&=active[sy,sx]
+        weights=np.maximum(np.stack((1-u-v,u,v),axis=-1),0)
+        weights/=weights.sum(axis=-1,keepdims=True)
+        field=weights@values[face];old=proposal[sy,sx]
+        duplicate=inside&covered[sy,sx]&(quality<1e-7)&(distance[sy,sx]<1e-7)
         if duplicate.any():conflict=max(conflict,float(np.max(np.abs(old[duplicate]-field[duplicate]))))
-        old[inside]=field[inside];covered[sy,sx]|=inside
+        choose=inside&(quality<distance[sy,sx])
+        old[choose]=field[choose];distance[sy,sx][choose]=quality[choose];covered[sy,sx]|=inside
     if np.any(active&~covered):raise ValueError('A painted texel is outside the supplied completion surface; protect that surface boundary')
     if conflict>2/255:raise ValueError('Overlapping UV faces disagree on the inferred skin color')
     encoded=np.where(proposal<=.0031308,proposal*12.92,1.055*np.maximum(proposal,0)**(1/2.4)-.055);result=source.copy();amount=region[y0:y1,x0:x1,None]*strength;original=source[y0:y1,x0:x1,:3];result[y0:y1,x0:x1,:3]=np.rint(original*(1-amount)+encoded.clip(0,1)*255*amount).clip(0,255).astype(np.uint8)

@@ -6,7 +6,7 @@
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
   "file_count": 447,
-  "total_bytes": 8784459,
+  "total_bytes": 8787083,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -205,8 +205,8 @@
       "sha256": "02449630baa7500167472a6481d2a705ae4065864405d4e63bb1d1d1279aa697"
     },
     "create_metahuman/color_completion_worker.py": {
-      "bytes": 6510,
-      "sha256": "982f12483b4022b9ef52f587329b4d4809534fa1fc54606864d382526cf11bc4"
+      "bytes": 6572,
+      "sha256": "2002c09dc6c201ecbc416a4a9897eb412836c627e0b237ba792e49b214f2e30a"
     },
     "create_metahuman/compare_views.py": {
       "bytes": 22457,
@@ -965,8 +965,8 @@
       "sha256": "dec7045cef498b36bfaab9fb05b0bb26d30bd7fba26cc30810dd881914352edc"
     },
     "create_metahuman/skin_reconstruction_worker.py": {
-      "bytes": 33971,
-      "sha256": "5ed1162cdbf13c5300da3840937f181d42c10d8476b1256d6256b795d44ce9ec"
+      "bytes": 34193,
+      "sha256": "48b72f299c32d9c75764c772e9c4f7065244eacba8694d238c17f62fad70042c"
     },
     "create_metahuman/skin_region_continuation.py": {
       "bytes": 4905,
@@ -1081,8 +1081,8 @@
       "sha256": "4194145fd01dfc3830bcef465c8fc33779eb6e00a356cd0ebba5a3e1ef643dc3"
     },
     "create_metahuman/surface_color_completion.py": {
-      "bytes": 6573,
-      "sha256": "b4cf0dec28273081db649a2c05a62e9b1aba3eb0bccc0ef3c556204d2ec8a3d7"
+      "bytes": 7901,
+      "sha256": "99857d7b13fc9d98355488ac6071d756c4121adb71a3efded723ad9fffef07a2"
     },
     "create_metahuman/surface_completion.py": {
       "bytes": 9213,
@@ -1189,8 +1189,8 @@
       "sha256": "73e141809ac109661fb1049722081172b89775d7c3ba160379e451cfde82a95a"
     },
     "create_metahuman/texture_region_completion.py": {
-      "bytes": 5396,
-      "sha256": "cc46cc7f863eda343cb8dede3fa522de58b7058b373c2b250e0b9a8fe8208457"
+      "bytes": 6408,
+      "sha256": "b04ca9a1d3ccf0ed13ee9a257f7f22267099af4f6e7d5db3dfa21f67ea289106"
     },
     "create_metahuman/texture_restore_backend.py": {
       "bytes": 10624,

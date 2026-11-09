@@ -7,13 +7,28 @@ The inpainting runs on a cropped region, leaving every other texel unchanged.
 import numpy as np
 
 
-def guarded_region(mask,valid,*,radius,seam_edges=None):
+def guarded_region(mask,valid,*,radius,seam_edges=None,geometry=None):
     """Protect chart padding and paired UV edges, using a crop-sized distance field."""
     from PIL import Image,ImageDraw
     from scipy.ndimage import distance_transform_edt
     mask=np.asarray(mask,dtype=np.float32);valid=np.asarray(valid)
     if mask.shape!=valid.shape or mask.ndim!=2 or not np.isfinite(mask).all() or np.any((mask<0)|(mask>1)) or not np.isfinite(radius) or not 1<=radius<=64:
         raise ValueError('Atlas repair needs matching bounded masks and a valid radius')
+    if geometry is not None:
+        # A physical graph has trusted donors across chart cuts. Use exact
+        # texel-center coverage rather than freezing the damaged seam bands.
+        if __package__:from .skin_anatomy import rasterize
+        else:from skin_anatomy import rasterize
+        triangles=np.asarray(geometry[2]);height,width=mask.shape
+        # Texture samplers address texel centers at (u*width-.5,v*height-.5).
+        # Include a one-texel gutter only where the artist explicitly painted it.
+        mapped=(triangles*np.array([width,height])-.5)/np.array([width-1,height-1])
+        coverage=rasterize(mapped,np.full(triangles.shape[:2],.99999,np.float32),(width,height))>0
+        from scipy.ndimage import binary_dilation
+        coverage=binary_dilation(coverage)
+        eligible=mask*coverage
+        return eligible,dict(skipped_uv_border_texels=int(np.count_nonzero(eligible<mask)),uv_border_protected=True,
+                             physical_seam_completion=True)
     eligible=mask.copy();y,x=np.nonzero(mask>0)
     if not len(x):return eligible,dict(skipped_uv_border_texels=0)
     height,width=mask.shape;halo=int(np.ceil(radius*3))+3

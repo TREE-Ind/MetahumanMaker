@@ -9,6 +9,7 @@ from texture_region_completion import complete_color,guarded_region
 def eligible(request):
     inputs=request.get('inputs',{})
     return (request.get('color_cleanup',True) and request.get('method')=='LOCAL_FILL'
+            and request.get('fill_method','TELEA')!='SURFACE'
             and inputs.get('accepted',{}).get('sha256')==inputs.get('albedo',{}).get('sha256')
             and not inputs.get('normal') and not request.get('normal_steps')
             and not request.get('relief_strength') and not request.get('surface_repair')

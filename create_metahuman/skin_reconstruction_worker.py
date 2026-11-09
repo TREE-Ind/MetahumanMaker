@@ -143,7 +143,8 @@ def run(request_path,*,owner=None):
             coverage=Image.new('L',size);draw=ImageDraw.Draw(coverage)
             for triangle in completion_geometry[2]:draw.polygon([(float(u)*(size[0]-1),(1-float(v))*(size[1]-1)) for u,v in triangle],fill=255)
             completion_valid=np.asarray(coverage,dtype=np.float32)/255;coverage.close()
-        eligible,guard=guarded_region(mask,completion_valid,radius=radius,seam_edges=seam_geometry[0] if seam_geometry is not None else None)
+        eligible,guard=guarded_region(mask,completion_valid,radius=radius,seam_edges=seam_geometry[0] if seam_geometry is not None else None,
+                                     geometry=completion_geometry if completion_method=='SURFACE' else None)
         proposal,report=complete_color(np.rint(source*255).astype(np.uint8),eligible,unknown=mask,
             radius=radius,strength=float(request.get('strength',1)),method=completion_method,geometry=completion_geometry)
         color=linear(proposal.astype(np.float32)/255);normals=None
@@ -274,7 +275,7 @@ def run(request_path,*,owner=None):
     if seam_geometry is not None:
         from texture_restore_core import encoded
         from texture_seams import inspect,reconcile
-        if not report.get('inference_skipped') and method!='LOCAL_FILL':
+        if not report.get('inference_skipped') and (method!='LOCAL_FILL' or request.get('fill_method')=='SURFACE'):
             eligible=mask*valid
             if color_protection is not None:eligible*=1-color_protection
             budget=.25*float(request.get('strength',1))
@@ -288,7 +289,7 @@ def run(request_path,*,owner=None):
         introduced=seams.get('seam_regression',{})
         report['new_seam_guard_passed']=bool(not len(seam_geometry[0]) or
             (seams.get('continuity_measured') and introduced.get('p95',1)<=2/255 and introduced.get('max',1)<=8/255))
-        if request.get('surface_balance') and not report['new_seam_guard_passed']:
+        if (request.get('surface_balance') or (method=='LOCAL_FILL' and request.get('fill_method')=='SURFACE')) and not report['new_seam_guard_passed']:
             from texture_seams import retain_regressed_anchors
             previous=np.clip(encoded(accepted),0,1);updated=np.clip(encoded(color),0,1)
             report['seam_anchor_fallback']=retain_regressed_anchors(previous,updated,*seam_geometry)

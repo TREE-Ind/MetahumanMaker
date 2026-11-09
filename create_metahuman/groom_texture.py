@@ -3,13 +3,13 @@ import numpy as np
 
 
 def from_mask(context, head, density, *, color=(.04,.018,.01), count=1800,
-              length=.004, width=.000065, seed=42, name='PaintedEyebrows'):
+              length=.004, width=.000065, root_offset=.00012, seed=42, name='PaintedEyebrows'):
     from . import mesh_ops as m, grooming
     density=np.asarray(density,dtype=float)
     if density.ndim!=2 or not np.isfinite(density).all() or np.any((density<0)|(density>1)):
         raise ValueError('Supply a finite top-down UV density mask between zero and one')
-    if not 1<=count<=100000 or not 0<length<=.03 or not 0<width<=.001:
-        raise ValueError('Use a bounded brow count, length and strand width')
+    if not 1<=count<=100000 or not 0<length<=.03 or not 0<width<=.001 or not 0<=root_offset<=.003:
+        raise ValueError('Use a bounded brow count, length, strand width and root offset')
     m.check_mesh(head,'Brow attachment head')
     head.data.calc_loop_triangles()
     points=m.evaluated_coordinates(context,head)
@@ -53,7 +53,7 @@ def from_mask(context, head, density, *, color=(.04,.018,.01), count=1800,
         direction=np.array([side,.2+.9*rising])@tangent
         direction-=normal*np.dot(direction,normal);direction/=max(np.linalg.norm(direction),1e-12)
         t=np.linspace(0,1,7);strand_length=length*rng.uniform(.65,1.25)
-        path=root+t[:,None]*direction*strand_length+normal*(.00012+np.sin(t*np.pi)*.00035)[:,None]
+        path=root+t[:,None]*direction*strand_length+normal*(root_offset+np.sin(t*np.pi)*.00035)[:,None]
         shade=np.clip(color*rng.uniform(.8,1.2),0,1)
         curves.append(dict(points=(path*[unit,-unit,unit]).tolist(),root_uv=root_uv.tolist(),
             widths=(width*unit*np.maximum(.05,1-t**1.8)).tolist(),
@@ -67,4 +67,5 @@ def from_mask(context, head, density, *, color=(.04,.018,.01), count=1800,
         raise
     grooming.preview_material(groom,(1,1,1),.48,strand_color=True)
     groom['cm_groom_method']='PAINTED_UV_DENSITY';groom['cm_groom_role']='Eyebrows'
+    groom['cm_groom_root_offset']=root_offset
     return groom

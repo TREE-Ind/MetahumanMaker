@@ -6,7 +6,7 @@
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
   "file_count": 447,
-  "total_bytes": 8783096,
+  "total_bytes": 8783255,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -349,8 +349,8 @@
       "sha256": "966b59b36b5f218fe0f3008b1f517e8996e6da66c2bc13155a1de5c24a60413f"
     },
     "create_metahuman/groom_texture.py": {
-      "bytes": 4077,
-      "sha256": "60262e872bd0d0c9598554b0b90e24be6f39f5942f2fe0702a7b5a70ce16e61b"
+      "bytes": 4189,
+      "sha256": "8a9780e870883c0272d76a275a8126ef687a1a5fbae33615d9f780f8ac6f83cb"
     },
     "create_metahuman/grooming.py": {
       "bytes": 53327,
@@ -1301,8 +1301,8 @@
       "sha256": "082345a23407af19be5416e6091dab73b07ef3e99870c751df525bb8801fd6e5"
     },
     "create_metahuman/unreal_groom.py": {
-      "bytes": 39692,
-      "sha256": "95d143e37a0aecc3f636daee78bc8d3d85318147944123326b0c5cc424943642"
+      "bytes": 39739,
+      "sha256": "4c109c22eabcdb71daf03e00b43fb4a9fc40fdbb53dfb33888656841ebd42c33"
     },
     "create_metahuman/unreal_head_revision.py": {
       "bytes": 20326,

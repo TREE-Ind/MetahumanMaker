@@ -518,7 +518,7 @@ def apply_to_selected_actor(groom_path,binding_path):
             'target':target.get_path_name(),'reused_component':bool(existing),'level_needs_save':True}
 
 
-def equip_wardrobe(character_path, item_path, slot='Hair'):
+def equip_wardrobe(character_path, item_path, slot='Hair', *, open_editor=True):
     """Register and equip a delivered item without replacing other wardrobe slots."""
     import unreal
 
@@ -564,7 +564,7 @@ def equip_wardrobe(character_path, item_path, slot='Hair'):
     report = {'status': 'complete', 'action': 'EQUIP_CREATOR', 'character': character.get_path_name(),
               'wardrobe': item.get_path_name(), 'slot': slot, 'reused_item': bool(keys), 'saved': True}
     try:
-        report['editor_opened'] = bool(editor.open_editor_for_assets([character]))
+        report['editor_opened'] = bool(editor.open_editor_for_assets([character])) if open_editor else False
     except Exception as exc:
         report['editor_opened'] = False
         report['editor_warning'] = str(exc)

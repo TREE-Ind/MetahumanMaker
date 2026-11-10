@@ -19,7 +19,8 @@ from scipy.spatial.transform import Rotation
 
 
 class Character:
-    def __init__(self, source):
+    def __init__(self, source, *, compact=False):
+        self.compact=bool(compact)
         self.source=Path(source).resolve()
         raw=(self.source/'character.glb').read_bytes()
         magic,version,total=struct.unpack_from('<III',raw)
@@ -37,7 +38,7 @@ class Character:
         self.doc['images']=[];self.doc['textures']=[]
         self.doc['samplers']=[{'magFilter':9729,'minFilter':9987,'wrapS':10497,'wrapT':10497}]
         self.report={'generator':'MetaHumanMaker.PortableCharacter','source':str(self.source),
-                     'textures':[],'grooms':[],'limitations':[
+                     'compact':self.compact,'textures':[],'grooms':[],'limitations':[
             'Standard PBR approximates Unreal skin, eyes and hair; native SSS, micro-skin and driven material responses are not embedded.',
             'Native strands are approximated with reduced, skinned ribbons; no native groom simulation or RBF.',
             'Four strongest joint influences per vertex are retained and renormalized for stock game loaders.',
@@ -132,16 +133,19 @@ class Character:
                 image=self.load_image(maps['basecolor'])
                 # Keep the full face resolution and lossless color. Body maps
                 # retain the actual 4K authoring detail, not an 8K bake upscale.
-                if name.startswith('CMNative_Body') and max(image.size)>4096:image.thumbnail((4096,4096),Image.Resampling.LANCZOS)
+                cap=2048 if self.compact and name.startswith('CMNative_Body') else 1024 if self.compact and kind=='TEETH' else 4096 if name.startswith('CMNative_Body') else 8192
+                if max(image.size)>cap:image.thumbnail((cap,cap),Image.Resampling.LANCZOS)
                 pbr['baseColorTexture']={'index':self.image(image,name+' BaseColor')}
             if maps.get('normal'):
                 image=self.load_image(maps['normal'])
-                if name.startswith('CMNative_Body') and max(image.size)>4096:image.thumbnail((4096,4096),Image.Resampling.LANCZOS)
+                cap=(4096 if kind=='SKIN' and not name.startswith('CMNative_Body') else 1024 if kind=='TEETH' else 2048) if self.compact else 4096 if name.startswith('CMNative_Body') else 8192
+                if max(image.size)>cap:image.thumbnail((cap,cap),Image.Resampling.LANCZOS)
                 a=np.asarray(image).copy();a[:,:,1]=255-a[:,:,1]
                 result['normalTexture']={'index':self.image(Image.fromarray(a),name+' Normal')}
             if maps.get('roughness') or maps.get('packed'):
                 rough=self.load_image(maps.get('packed') or maps['roughness'])
-                if name.startswith('CMNative_Body') and max(rough.size)>4096:rough.thumbnail((4096,4096),Image.Resampling.LANCZOS)
+                cap=(1024 if kind=='TEETH' else 2048) if self.compact else 4096 if name.startswith('CMNative_Body') else 8192
+                if max(rough.size)>cap:rough.thumbnail((cap,cap),Image.Resampling.LANCZOS)
                 size=rough.size;r=np.asarray(rough.getchannel('G') if maps.get('packed') else rough.getchannel('R'))
                 cavity=self.load_image(maps['cavity']).resize(size,Image.Resampling.BILINEAR).getchannel('R') if maps.get('cavity') else Image.new('L',size,255)
                 ao=np.asarray(cavity,dtype=np.float32);ao=np.rint(255-(255-ao)*(.35 if kind=='SKIN' else 1)).astype(np.uint8)
@@ -165,6 +169,18 @@ class Character:
         return result
 
     def convert(self):
+        bank=json.loads((self.source/'native-expression-bank.json').read_text())
+        if self.compact:
+            full={sample['target'] for group in bank['groups'] for sample in group['samples'] if sample['strength']==1}
+            for mesh in self.doc['meshes']:
+                names=mesh.get('extras',{}).get('targetNames',[])
+                if not names:continue
+                keep=[i for i,name in enumerate(names) if name in full]
+                for primitive in mesh['primitives']:
+                    if 'targets' in primitive:primitive['targets']=[primitive['targets'][i] for i in keep]
+                mesh['extras']['targetNames']=[names[i] for i in keep]
+                if 'weights' in mesh:mesh['weights']=[mesh['weights'][i] for i in keep]
+            self.report['limitations'].append('Compact profile retains full-strength samples for all expression groups; intermediate-strength samples are omitted.')
         recipes=json.loads((self.source/'native-materials.json').read_text())['materials']
         old_materials=self.doc['materials'];self.doc['materials']=[self.material(m['name'],recipes[m['name']]) for m in old_materials]
         self.face=copy.deepcopy(next(p for m in self.doc['meshes'] for p in m['primitives'] if old_materials[p['material']]['name']=='CMNative_Face_0'))
@@ -185,7 +201,6 @@ class Character:
                 kept.append(p)
             mesh['primitives']=kept
         for skin in self.doc['skins']:skin['inverseBindMatrices']=self.copy_accessor(skin['inverseBindMatrices'])
-        bank=json.loads((self.source/'native-expression-bank.json').read_text())
         rename={s['target']:g['name']+'_'+str(round(s['strength']*100)).zfill(3) for g in bank['groups'] for s in g['samples']}
         for mesh in self.doc['meshes']:
             if mesh.get('extras',{}).get('targetNames'):mesh['extras']['targetNames']=[rename.get(n,n) for n in mesh['extras']['targetNames']]
@@ -297,12 +312,13 @@ class Character:
             node=len(self.doc['nodes']);self.doc['nodes'].append({'name':record['name'],'mesh':mesh_index,'skin':self.doc['nodes'][face_node]['skin']});parent['children'].append(node)
             self.report['grooms'].append({'name':record['name'],'source_strands':len(curves),'portable_ribbons':len(selected),'vertices':len(vertices),'facial_morphs':len(primitive.get('targets',[]))})
 
-    def write(self, output):
+    def write(self, output, *, max_bytes=None):
         output=Path(output).resolve()
         if output.exists():raise ValueError('Choose a fresh output GLB')
         self.doc['buffers']=[{'byteLength':len(self.binary)}]
         encoded=json.dumps(self.doc,separators=(',',':')).encode();encoded+=b' '*(-len(encoded)%4)
         self.binary.extend(b'\0'*(-len(self.binary)%4));total=12+8+len(encoded)+8+len(self.binary)
+        if max_bytes is not None and total>max_bytes:raise ValueError(f'Character GLB exceeds the upload budget: {total} > {max_bytes} bytes')
         output.parent.mkdir(parents=True,exist_ok=True)
         with output.open('wb') as stream:
             stream.write(struct.pack('<III',0x46546c67,2,total));stream.write(struct.pack('<II',len(encoded),0x4e4f534a));stream.write(encoded)
@@ -312,6 +328,6 @@ class Character:
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--source',required=True);parser.add_argument('--output',required=True);parser.add_argument('--report',required=True);args=parser.parse_args()
-    character=Character(args.source);character.convert();report=character.write(args.output)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--source',required=True);parser.add_argument('--output',required=True);parser.add_argument('--report',required=True);parser.add_argument('--compact',action='store_true');parser.add_argument('--max-bytes',type=int);args=parser.parse_args()
+    character=Character(args.source,compact=args.compact);character.convert();report=character.write(args.output,max_bytes=args.max_bytes)
     Path(args.report).write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8');print(json.dumps({'output':args.output,'bytes':report['bytes'],'external_resources':0}))

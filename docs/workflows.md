@@ -81,3 +81,15 @@ Geometry changes require a matching new delivery before texture updates or rig e
 **Export Static GLB** produces accepted textured geometry with available eyes/teeth and portable PBR material approximations. It does not include a native skeletal rig, DNA or strand grooms.
 
 The separate **native web bundle** path captures rigged character resources, sampled face controls, supported skin/eye appearance and grooms for browser use. It is a different workflow from static GLB. Browser materials, groom rendering and sampled nonlinear facial combinations approximate the native character. Review your actual bundle in the target browser; parity with every native shader and artist modification is not guaranteed.
+
+### Character-only game asset
+
+For engines that import standard glTF without the native web bundle's renderer hooks, convert a completed full-body native web bundle to one embedded GLB. Run this in a Python environment with NumPy, SciPy and Pillow:
+
+```sh
+python create_metahuman/portable_character.py --source ./Character-WebBundle --output ./Character.glb --report ./conversion.json
+```
+
+The GLB includes embedded PBR textures, the rig, sampled facial morphs and reduced skinned groom ribbons. Shared body/face joints replace Unreal's Copy Pose dependency. Four strongest influences are retained per vertex for stock loaders; the report measures discarded influence weights. Authoring vertex masks are excluded from visible color. No viewer, lighting studio, renderer library or character JavaScript is required.
+
+Native skin shading and groom behavior become portable approximations. Animated material responses and RigLogic are omitted; facial morphs remain available by name. Retarget locomotion clips to the included skeleton: this conversion does not create idle, walk or run animations. Validate the GLB in the destination game engine before publishing it.

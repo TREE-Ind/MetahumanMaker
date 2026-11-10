@@ -5,8 +5,8 @@
   "license": "MIT",
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
-  "file_count": 447,
-  "total_bytes": 8788878,
+  "file_count": 448,
+  "total_bytes": 8813093,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -747,6 +747,10 @@
     "create_metahuman/pixel_buffers.py": {
       "bytes": 1225,
       "sha256": "c7f74e9cf6946a6fff5a8008abc9890e1829ca5183e11e3d6d6530dd857c1c6f"
+    },
+    "create_metahuman/portable_character.py": {
+      "bytes": 23049,
+      "sha256": "0ef3e6636f92de6a53a4fc11a36d7d2914f809ad9e0bfb7a6ab100e6880df6e6"
     },
     "create_metahuman/preview_worker.py": {
       "bytes": 2264,
@@ -1641,8 +1645,8 @@
       "sha256": "ac3fcd5635b1f6693865c884aea373ffb639d2e1f4e5da2ed38504ebb335c9ce"
     },
     "docs/workflows.md": {
-      "bytes": 8909,
-      "sha256": "7df69f00eddac0182691ae5b81ca7357eff1576a4226bf6b171d4d45f2de6ec8"
+      "bytes": 10075,
+      "sha256": "6d42298bd2b5db6e09e58d91579a5516e5d1ee0cb32f97e1c7c393dcfaee5465"
     },
     "plugins/CreateMetaHumanBridge/CreateMetaHumanBridge.uplugin": {
       "bytes": 787,

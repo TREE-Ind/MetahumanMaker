@@ -690,8 +690,12 @@ class CM_OT_guided(bpy.types.Operator):
                     return bpy.ops.cm.conform_native_surface()
                 from .features import generated_head_update
                 head_update=generated_head_update(s)
-                if f.wrap_method == "AUTO":
-                    from . import auto_wrap_jobs
+                from . import auto_wrap_jobs
+                if not bpy.app.background and not auto_wrap_jobs.publishing():
+                    if f.wrap_method=='AUTO' and auto_wrap_jobs.needs_detection(context):auto_wrap_jobs.start(context,wrap=True)
+                    else:auto_wrap_jobs.start_fit(context)
+                    return {'FINISHED'}
+                if f.wrap_method == "AUTO" and not auto_wrap_jobs.publishing():
                     if auto_wrap_jobs.needs_detection(context):
                         if bpy.app.background:
                             from .automation import align_detect
@@ -908,8 +912,8 @@ def draw(layout, context):
     from . import auto_wrap_jobs
     if auto_wrap_jobs.running():
         box=layout.box()
-        text(box,'Detecting landmarks for Auto Wrap...')
-        box.operator('cm.cancel_auto_wrap',icon='CANCEL')
+        text(box,'Fitting the surface in the background...' if auto_wrap_jobs.fitting() else 'Detecting landmarks for Auto Wrap...')
+        box.operator('cm.cancel_auto_wrap',text='Cancel Fit' if auto_wrap_jobs.fitting() else 'Cancel Auto Wrap',icon='CANCEL')
         return
     from . import bake_jobs, detail_jobs, unreal_jobs, skin_library, wrinkle_jobs, groom_jobs, skin_native_jobs
     pending_wrinkles=any(obj and obj.get('cm_wrinkle_update_pending') for obj in (f.wm1,f.wm2,f.wm3))
@@ -1130,6 +1134,16 @@ def draw(layout, context):
                         "cm.guided", text="Template Points"
                     ).action = "VIEW_TEMPLATE"
                 layout.prop(f, "wrap_quality", text="Quality")
+                layout.prop(f, 'conservative', text='Conservative Fit')
+                if f.conservative:
+                    text(layout, 'Protects difficult surfaces; may soften the fit.')
+                if s.part=='HEAD' or generated_head_update(s):
+                    layout.prop(f, 'is_mask', text='Front Face Only')
+                    if f.is_mask:
+                        if f.wrap_method=='MANUAL':layout.prop(f, 'front_axis', text='Faces')
+                        text(layout, 'Fits the front while retaining the back. Check the facing direction.')
+                if s.source and s.source.get('cm_gnm'):
+                    layout.prop(f, "retain_generated_ear_detail")
                 button(
                     layout,
                     "Update Face" if s.result and s.source and s.source.get('cm_gnm') and s.part!='BODY' else "Auto Wrap Character" if f.wrap_method=='AUTO' else "Wrap Character",
@@ -1164,6 +1178,8 @@ def draw(layout, context):
                 protected = 0
             if protected:
                 text(layout, 'Conservative fitting reduced steep surface changes. If the fit is too loose, adjust points and wrap again.')
+            if s.result.get('cm_wrap_recovery'):
+                text(layout, 'Automatic fitting used conservative recovery. Compare the likeness and difficult regions before continuing.')
             from . import joint_wrap
             morph_objects=joint_wrap.morph_parts(context.scene)
             if morph_objects:
@@ -1510,8 +1526,9 @@ def draw(layout, context):
                 box.prop(f,'bake_open_folder')
     elif stage == "GROOM":
         g = context.scene.cm_groom
-        from .grooming import draw_lash_fit
+        from .grooming import draw_lash_fit,draw_clearance,draw_replacement
         draw_lash_fit(layout,context)
+        draw_clearance(layout,context)
         if context.mode=='OBJECT':
             text(layout,'Create and edit hair here. Finish character assembly in Unreal before binding and Push.')
         if g.exchange_status and not groom_jobs.running():
@@ -1575,6 +1592,9 @@ def draw(layout, context):
             edit.prop(g, 'groom')
             from .grooming import draw_population_selection
             draw_population_selection(edit)
+            edit.operator('cm.groom',text='Remove Selected Curves').action='REMOVE_SELECTED'
+            from .grooming import draw_crown_shape
+            draw_crown_shape(edit,context)
             row = edit.row(align=True)
             row.enabled = bool(g.groom and g.groom.type == 'CURVES')
             row.operator('cm.groom', text='Edit Hair', icon='SCULPTMODE_HLT').action = 'EDIT'
@@ -1612,13 +1632,13 @@ def draw(layout, context):
                     try:delivered=json.loads(g.last_push_result or g.exchange_result)
                     except ValueError:delivered={}
                     if delivered.get('status')=='complete' and delivered.get('groom') and delivered.get('binding'):
+                        exchange.prop(g,'wardrobe_slot',text='Groom Section')
                         if delivered.get('wardrobe') and f.unreal_character:
-                            exchange.prop(g,'wardrobe_slot')
                             exchange.operator('cm.groom',text='Equip Groom in Creator',icon='OUTLINER_OB_CURVES').action='EQUIP_CREATOR'
-                        exchange.operator('cm.groom',text='Apply to Selected Unreal Actor',icon='OUTLINER_OB_CURVES').action='APPLY_ACTOR'
-                        text(exchange,'Select one matching character in the Unreal level. Save the level after applying.')
+                draw_replacement(exchange,context)
                 exchange.prop(g,'show_asset_paths',toggle=True)
                 if g.show_asset_paths:
+                    exchange.operator('cm.groom',text='Add Separate Groom Component',icon='ADD').action='APPLY_ACTOR'
                     exchange.prop(g, 'unreal_target', text='Face Mesh')
                     exchange.operator('cm.groom', text='Get Head from Path').action = 'GRAB_HEAD'
                     exchange.prop(g, 'unreal_asset', text='Groom Asset')
@@ -1630,6 +1650,9 @@ def draw(layout, context):
                 row = exchange.row()
                 row.enabled = bool(g.groom)
                 row.operator('cm.groom', text='Push Groom & Wardrobe', icon='EXPORT').action = 'PUSH'
+                exchange.prop(g, 'fit_lod_meshes')
+                exchange.prop(g, 'simulation_policy')
+                text(exchange,'Review hair motion in Unreal Simulate; a still editor pose may not advance physics.')
                 text(exchange,'Repeated pushes create a new revision. Results are selected in Unreal.')
                 if g.exchange_result:
                     try:result=json.loads(g.exchange_result)

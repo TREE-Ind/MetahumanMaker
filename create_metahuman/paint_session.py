@@ -151,6 +151,7 @@ class PaintSession:
             raise ValueError('Wait for the current body or map operation before Smart Paint')
         self.role,self.obj=part(context);m.check_mesh(self.obj,'Skin part')
         if not self.obj.data.uv_layers.active:raise ValueError('Smart Paint needs the skin UV layout')
+        self.uv_layout=skin_projection.uv_layout_signature(self.obj)
         self.channel=channel;self.source=map_image(self.obj,channel);self.reference_source=self.source if self.selection_only else reference_image or (reference(context,self.role,self.obj) if channel=='ALBEDO' else None)
         if not self.reference_source:raise ValueError('Load a matching reference skin for this part first')
         if self.source.source=='TILED' or self.reference_source.source=='TILED':
@@ -174,6 +175,18 @@ class PaintSession:
         self.triangles={}
         for triangle in self.obj.data.loop_triangles:
             self.triangles.setdefault(triangle.polygon_index,[]).append((triangle.vertices[:],triangle.loops[:]))
+        self.surface_triangles=list(self.obj.data.loop_triangles)
+        self.surface_polygons={}
+        self.surface_neighbors=[set() for _ in self.surface_triangles]
+        edges={}
+        for index,triangle in enumerate(self.surface_triangles):
+            self.surface_polygons.setdefault(triangle.polygon_index,[]).append(index)
+            ids=triangle.vertices[:]
+            for a,b in zip(ids,(*ids[1:],ids[0])):
+                key=tuple(sorted((a,b)))
+                for other in edges.get(key,()):
+                    self.surface_neighbors[index].add(other);self.surface_neighbors[other].add(index)
+                edges.setdefault(key,[]).append(index)
         self.bvh=BVHTree.FromPolygons(self.world,[p.vertices[:] for p in self.obj.data.polygons])
         self.center=(self.world.min(0)+self.world.max(0))*.5
         from . import paint_reference,skin_detail_color
@@ -273,6 +286,85 @@ class PaintSession:
                 patch=self.mask[y0:y1,x0:x1]
                 patch[:]=patch*(1-alpha) if erase else patch+(1-patch)*alpha
                 self.compose((x0,x1,y0,y1))
+
+    def apply_mask(self,weights,*,erase=False,expected_uv=None):
+        """Apply an explicit atlas mask as one undoable Smart Paint stroke.
+
+        The caller owns anatomical selection; masks do not infer damaged skin.
+        Values use the same lower-left image origin as Blender pixel buffers.
+        """
+        if self.closed:raise ValueError('Start a new Smart Paint session before applying a mask')
+        if (skin_projection.uv_layout_signature(self.obj)!=self.uv_layout
+                or expected_uv is not None and expected_uv!=self.uv_layout):
+            raise ValueError('The repair mask belongs to a different or changed UV layout')
+        weights=np.asarray(weights,dtype=np.float32)
+        if weights.shape!=self.mask.shape or not np.isfinite(weights).all() or np.any((weights<0)|(weights>1)):
+            raise ValueError('Smart Paint mask needs matching atlas dimensions and finite weights from 0 to 1')
+        y,x=np.nonzero(weights>0)
+        if not len(x):return False
+        x0,x1=int(x.min()),int(x.max())+1;y0,y1=int(y.min()),int(y.max())+1
+        self.begin();self.remember(x0,x1,y0,y1)
+        patch=self.mask[y0:y1,x0:x1];amount=weights[y0:y1,x0:x1]
+        patch[:]=patch*(1-amount) if erase else patch+(1-patch)*amount
+        self.compose((x0,x1,y0,y1));self.end();return True
+
+    def stamp_surface(self,point,polygon,erase=False):
+        """Paint a connected sphere/skin intersection, including split UV seams.
+
+        Radius is converted from texels using the hit triangle's area density.
+        Nearby disconnected surfaces and UV-only neighbors are never visited.
+        Shared atlas texels necessarily remain shared by their consumers.
+        """
+        from mathutils import Vector
+        from mathutils.geometry import closest_point_on_tri
+        from .photo_color_core import raster
+        if self.closed:raise ValueError('Start a new Smart Paint session before painting')
+        if skin_projection.uv_layout_signature(self.obj)!=self.uv_layout:
+            raise ValueError('The skin UV layout changed during Smart Paint')
+        hit=self.uv_at(point,polygon)
+        if hit is None:return False
+        _,triangle,triangle_uv=hit
+        texel=(triangle_uv[1:]-triangle_uv[0])*[self.width,self.height]
+        texel_area=abs(float(np.linalg.det(texel)))
+        world_area=float(np.linalg.norm(np.cross(triangle[1]-triangle[0],triangle[2]-triangle[0])))
+        if texel_area<1e-12 or world_area<1e-20:return False
+        radius=float(self.controls.paint_radius)*np.sqrt(world_area/texel_area)
+        center=np.asarray(point,dtype=float);center_vector=Vector(center)
+        seeds=self.surface_polygons.get(polygon,())
+        if not seeds:return False
+        seed=min(seeds,key=lambda i:(closest_point_on_tri(center_vector,
+            *(Vector(p) for p in self.world[list(self.surface_triangles[i].vertices)]))-center_vector).length_squared)
+        pending=[seed];seen=set();tiles={};uv_layer=self.obj.data.uv_layers.active.data
+        while pending:
+            index=pending.pop()
+            if index in seen:continue
+            seen.add(index);t=self.surface_triangles[index]
+            world=self.world[list(t.vertices)]
+            closest=closest_point_on_tri(center_vector,*(Vector(p) for p in world))
+            if np.linalg.norm(np.asarray(closest)-center)>radius:continue
+            for neighbor in self.surface_neighbors[index]-seen:
+                shared=list(set(t.vertices)&set(self.surface_triangles[neighbor].vertices))
+                if len(shared)!=2:continue
+                a,b=self.world[shared];edge=b-a;length=float(edge@edge)
+                nearest=a+edge*np.clip(float((center-a)@edge)/max(length,1e-30),0,1)
+                if np.linalg.norm(nearest-center)<=radius:pending.append(neighbor)
+            patch=raster(np.asarray([uv_layer[i].uv[:] for i in t.loops]),self.width,self.height)
+            if patch is None:continue
+            y,x,bary=patch
+            amount=np.maximum(1-np.linalg.norm(bary@world-center,axis=1)/radius,0)**2*float(self.controls.paint_opacity)
+            keep=amount>0;y,x,amount=y[keep],x[keep],amount[keep]
+            for key in set(zip(x//TILE,y//TILE)):
+                tx,ty=map(int,key)
+                tile=tiles.setdefault((tx,ty),np.zeros((min(TILE,self.height-ty*TILE),min(TILE,self.width-tx*TILE)),dtype=np.float32))
+                selected=(x//TILE==tx)&(y//TILE==ty)
+                np.maximum.at(tile,(y[selected]-ty*TILE,x[selected]-tx*TILE),amount[selected])
+        for (tx,ty),amount in tiles.items():
+            x0,y0=tx*TILE,ty*TILE;y1,x1=y0+amount.shape[0],x0+amount.shape[1]
+            self.remember(x0,x1,y0,y1)
+            patch=self.mask[y0:y1,x0:x1]
+            patch[:]=patch*(1-amount) if erase else patch+(1-patch)*amount
+            self.compose((x0,x1,y0,y1))
+        return bool(tiles)
 
     def end(self):
         if not self.stroke:return

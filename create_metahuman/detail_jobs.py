@@ -130,6 +130,19 @@ def _write(path, data):
 
 
 def start(context, s, f, action="SYNC", part="HEAD"):
+    staging={}
+    try:
+        return _start(context,s,f,action,part,_staging=staging)
+    except Exception:
+        # A serialization/Popen failure has no worker to clean its carriers.
+        # Never remove inputs from a process that may already be consuming them.
+        process=staging.get('process')
+        if staging.get('folder') and (process is None or process.poll() is not None):
+            cleanup(staging)
+        raise
+
+
+def _start(context, s, f, action="SYNC", part="HEAD", *, _staging):
     global _JOB
     from . import bake_jobs, native_body
     from . import wrinkle_jobs
@@ -205,6 +218,8 @@ def start(context, s, f, action="SYNC", part="HEAD"):
             raise ValueError("Recover the saved sculpt reference before subdivision")
     if not inputs:
         return False
+    storage=resource_budget.detail_update_storage(inputs,subdivide=action=='SUBDIVIDE')
+    resource_budget.require_disk('sculpt detail processing',Path(bpy.path.abspath(s.project_dir)),storage['required_bytes'])
     folder = (
         Path(bpy.path.abspath(s.project_dir)).resolve()
         / "DetailUpdates"
@@ -212,6 +227,7 @@ def start(context, s, f, action="SYNC", part="HEAD"):
         / uuid.uuid4().hex[:12]
     )
     folder.mkdir(parents=True)
+    _staging['folder']=folder
     targets = []
     from . import detail_recovery as recovery
 
@@ -319,6 +335,7 @@ def start(context, s, f, action="SYNC", part="HEAD"):
         ],
         "parent": os.getpid(),
         "addon_root": str(Path(__file__).resolve().parents[1]),
+        "storage_budget": storage,
     }
     _write(folder / "request.json", request)
     with (folder / "worker.log").open("w", encoding="utf-8") as log:
@@ -341,6 +358,7 @@ def start(context, s, f, action="SYNC", part="HEAD"):
             if os.name == "nt"
             else 0,
         )
+    _staging['process']=process
     _JOB = {
         "process": process,
         "scene": context.scene,

@@ -167,6 +167,7 @@ def start(scene,action):
     global _JOB,_DIRTY
     from . import groom_jobs,unreal_jobs,skin_native_jobs
     if running() or groom_jobs.running() or unreal_jobs.running() or skin_native_jobs.running():raise ValueError('Wait for the current Unreal operation before changing facial review')
+    if action=='CAPTURE_VIEW' and _DIRTY:raise ValueError('Wait for the queued facial controls before capturing their shaded view')
     s=scene.cm_settings;g=scene.cm_face_review;engine=bpy.path.abspath(s.unreal_engine_dir)
     if not (Path(engine)/'Engine/Plugins/Experimental/PythonScriptPlugin/Content/Python/remote_execution.py').is_file():raise ValueError('Choose the Unreal installation containing Engine/')
     if g.receipt:
@@ -219,13 +220,13 @@ def start(scene,action):
     if action=='SAVE_LOOK':
         if not g.look_enabled:raise ValueError('Enable skin preview before saving tuning')
         request['look']=look_values(g);_DIRTY=None
-    if action not in {'START','APPLY','RESTORE','SAVE_LOOK','UNDO_LOOK','CAPTURE_LIDS','PREPARE_LIDS','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','PREPARE_NEUTRAL','STAGE_LIDS','OPEN_STAGED','COMPARE_STAGED','END_COMPARISON','FRAME_COMPARISON','REVISE_BOUNDS'}:raise ValueError('Unknown facial review operation')
+    if action not in {'START','APPLY','RESTORE','SAVE_LOOK','UNDO_LOOK','CAPTURE_VIEW','CAPTURE_LIDS','PREPARE_LIDS','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','PREPARE_NEUTRAL','STAGE_LIDS','OPEN_STAGED','COMPARE_STAGED','END_COMPARISON','FRAME_COMPARISON','REVISE_BOUNDS'}:raise ValueError('Unknown facial review operation')
     folder=Path(bpy.path.abspath(s.project_dir))/'FaceReview'/'.exchange'/uuid.uuid4().hex;folder.mkdir(parents=True,exist_ok=False)
     if action=='PREPARE_SCULPT':
         from .native_pose_sculpt import export
         request['sculpt_snapshot']=export(bpy.context,folder)
     names={'unreal_face_review','unreal_face_comparison','unreal_revision_bounds','unreal_actor_preview','process_ref','unreal_face_look','unreal_skin_normal_response','unreal_skin_repair','unreal_lod_correctives','capture_storage','expression_controls','resource_budget'}
-    if action in {'STAGE_LIDS','REVISE_BOUNDS'}:names.update({'unreal_lid_staging','unreal_globe_rigidity','unreal_groom'})
+    if action in {'STAGE_LIDS','REVISE_BOUNDS'}:names.update({'unreal_lid_staging','unreal_globe_rigidity','unreal_groom','unreal_groom_representations'})
     if action in {'PREPARE_LIDS','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','PREPARE_NEUTRAL'}:
         pending=['unreal_lid_preparation','lid_calibration_worker','lid_calibration','native_pose_sculpt_solver','native_lid_repair_bank','native_interval_fields','native_neutral_lid_fit'];seen=set()
         while pending:
@@ -242,6 +243,7 @@ def start(scene,action):
     job['thread']=threading.Thread(target=_send,args=(job,),daemon=True);_JOB=job;g.receipt=str(folder/'receipt.json');g.status='Connecting to the selected Unreal character...' if action=='START' else 'Restoring previous playback...' if action=='RESTORE' else 'Updating the native facial pose...'
     if action=='RESTORE':_DIRTY=None
     if action=='CAPTURE_LIDS':g.status='Capturing '+str(request['capture_count'])+' native LOD0 eye poses. Previous playback is retained.'
+    if action=='CAPTURE_VIEW':g.status='Capturing the current shaded Unreal viewport...'
     if action in {'PREPARE_LIDS','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','PREPARE_NEUTRAL'}:g.status='Preparing a separate native lid correction proposal...'
     if action=='STAGE_LIDS':g.status='Staging a separate native face and Blueprint with matching groom bindings...'
     if action=='REVISE_BOUNDS':g.status='Creating and validating a separate render-bounds revision...'
@@ -255,6 +257,11 @@ def poll():
     if not job:return None
     receipt=job['folder']/'receipt.json';scene=job.get('scene')
     if scene and (scene.name not in bpy.data.scenes or scene.cm_face_review.receipt!=str(receipt)):scene=None;job['scene']=None
+    owner=job['folder']/'capture-owner.json'
+    if not receipt.is_file() and job['request']['action']=='CAPTURE_VIEW' and owner.is_file():
+        try:stopped=not process_ref.alive(json.loads(owner.read_text()))
+        except (OSError,ValueError,KeyError):stopped=False
+        if stopped:receipt.write_text(json.dumps(dict(status='failed',error='The original Unreal process closed before completing its shaded-view receipt. Any image was retained. Reconnect before capturing again.')))
     if not receipt.is_file():
         if scene and job['request']['action'] in {'PREPARE_LIDS','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','PREPARE_NEUTRAL'}:
             try:scene.cm_face_review.status=json.loads((job['folder']/'progress.json').read_text())['phase']
@@ -390,16 +397,20 @@ class CM_FaceReviewSettings(bpy.types.PropertyGroup):
     look_enabled:BoolProperty(name='Preview Skin Response',default=False,update=queue_apply)
     look_normal:FloatProperty(name='Surface Detail',default=1.,min=0.,soft_max=2.,description='Native head normal response; micro skin remains a separate control',update=queue_look)
     look_micro:FloatProperty(name='Micro Skin',default=.7,min=0.,soft_max=2.,description='Native fine skin normal response',update=queue_look)
-    lod:IntProperty(name='Face LOD',default=-1,min=-1,max=7,description='-1 retains the current setting; 0–7 force the selected native face LOD',update=queue_apply)
+    lod:IntProperty(name='Face LOD',default=-1,min=-1,max=7,description='-1 retains the current setting; 0–7 select face quality with the native body/groom LOD mappings',update=queue_apply)
 
 
 class CM_OT_native_face_review(bpy.types.Operator):
     bl_idname='cm.native_face_review'
     bl_label='Review Native Facial Controls'
-    action:EnumProperty(items=[(key,key.title(),'') for key in ('START','APPLY','RESTORE','REFRESH','SAVE_LOOK','UNDO_LOOK','CAPTURE_LIDS','OPEN_CAPTURE','PREPARE_LIDS','CANCEL_PREPARE','OPEN_PREPARATION','STAGE_LIDS','OPEN_STAGED','COMPARE_STAGED','END_COMPARISON','FRAME_COMPARISON','EDIT_CAPTURED_POSE','FINISH_SCULPT','SCULPT_POSE','FRAME_SCULPT','DISCARD_SCULPT','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','REVISE_BOUNDS','PREPARE_NEUTRAL')])
+    action:EnumProperty(items=[(key,key.title(),'') for key in ('START','APPLY','RESTORE','REFRESH','SAVE_LOOK','UNDO_LOOK','CAPTURE_VIEW','OPEN_VIEW','CAPTURE_LIDS','OPEN_CAPTURE','PREPARE_LIDS','CANCEL_PREPARE','OPEN_PREPARATION','STAGE_LIDS','OPEN_STAGED','COMPARE_STAGED','END_COMPARISON','FRAME_COMPARISON','EDIT_CAPTURED_POSE','FINISH_SCULPT','SCULPT_POSE','FRAME_SCULPT','DISCARD_SCULPT','PREPARE_SCULPT','PREPARE_BANK','PREPARE_INTERVALS','REVISE_BOUNDS','PREPARE_NEUTRAL')])
     def execute(self,context):
         try:
-            if self.action in {'EDIT_CAPTURED_POSE','FINISH_SCULPT','SCULPT_POSE','FRAME_SCULPT','DISCARD_SCULPT'}:
+            if self.action=='OPEN_VIEW':
+                file=(result(context.scene.cm_face_review).get('shaded_capture') or {}).get('file')
+                if not file or not Path(file).is_file():raise ValueError('Capture a shaded Unreal view first')
+                bpy.ops.wm.path_open(filepath=file)
+            elif self.action in {'EDIT_CAPTURED_POSE','FINISH_SCULPT','SCULPT_POSE','FRAME_SCULPT','DISCARD_SCULPT'}:
                 if running():raise ValueError('Wait for the current native review operation')
                 from . import native_pose_sculpt
                 if self.action=='EDIT_CAPTURED_POSE':native_pose_sculpt.begin(context)
@@ -456,6 +467,12 @@ def draw(layout,context):
         options=capture.column();options.enabled=not running() and not state.get('comparison');options.prop(g,'capture_set')
         options.operator('cm.native_face_review',text='Capture Eye Poses',icon='RENDER_STILL').action='CAPTURE_LIDS'
         capture.label(text='Saved LOD0 geometry samples for calibration.')
+        row=box.row();row.enabled=not running() and not _DIRTY and not state.get('comparison')
+        row.operator('cm.native_face_review',text='Capture Current UE View',icon='RENDER_STILL').action='CAPTURE_VIEW'
+        if state.get('shaded_capture'):row.operator('cm.native_face_review',text='Open Image',icon='FILE_IMAGE').action='OPEN_VIEW'
+        skin_state=(state.get('shaded_capture') or {}).get('skin_expression_state',{})
+        if skin_state.get('available'):
+            box.label(text='Last captured skin: '+str(skin_state['active_count'])+' expression drivers active')
         accepted=state.get('calibration_capture') or {}
         if accepted.get('status')=='complete' and accepted.get('capture_set')!='CURRENT':
             row=capture.row();row.enabled=not running() and not state.get('comparison');row.operator('cm.native_face_review',text='Prepare Lid Correction',icon='MOD_SMOOTH').action='PREPARE_LIDS'

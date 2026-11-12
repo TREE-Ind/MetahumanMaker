@@ -26,6 +26,7 @@ urls = {
     "head_sparse_68.txt": "https://raw.githubusercontent.com/google/GNM/main/gnm/shape/data/landmarks/head_sparse_68.txt",
     "identity_decoder_model.h5": "https://raw.githubusercontent.com/google/GNM/main/gnm/shape/data/semantic_sampler/identity_decoder_model.h5",
     "face_landmarker.task": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+    "selfie_multiclass_256x256.tflite": "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/1/selfie_multiclass_256x256.tflite",
     "pose_landmarker_lite.task": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
     "GNM-LICENSE": "https://raw.githubusercontent.com/google/GNM/main/LICENSE",
 }

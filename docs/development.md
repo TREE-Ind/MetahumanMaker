@@ -46,6 +46,8 @@ These standard-library checks audit the public source boundary, documentation li
 
 For a geometry/material/runtime change, include one meaningful complete workflow with before/after evidence and versions. Preserve unrelated regions, accepted paint, cancellation/recovery and map provenance. Avoid repetitive test scenes that only restate an implementation.
 
+The multi-view geometry regression needs NumPy and SciPy but no licensed model weights: `python tests/photo_multiview.py`. It checks a known depth change that a frontal view cannot resolve, with camera-only baselines, frontal protection and unchanged non-head identity parameters. Native character appearance still needs a complete Blender/Unreal review.
+
 ## Package the add-on
 
 After the groom helper is built:

@@ -38,6 +38,11 @@
 /tests/*
 !/tests/release_source.py
 !/tests/native_assembly_memory.py
+!/tests/photo_multiview.py
+!/tests/photo_eyes.py
+!/tests/photo_visibility.py
+!/tests/groom_group_mapping.py
+!/tests/groom_lod_warp.py
 !/docs/
 /docs/*
 !/docs/quickstart.md

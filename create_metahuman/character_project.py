@@ -236,4 +236,5 @@ def transaction(context):
                      for item in getattr(bpy.data, name) if item not in previous}
             if added:
                 bpy.data.batch_remove(ids=added)
+                context.view_layer.update()
             raise

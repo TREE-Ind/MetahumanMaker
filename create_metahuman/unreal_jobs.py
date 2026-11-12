@@ -181,7 +181,7 @@ def character_action(context, open_editor=False, build=False, eye_options=None,a
         folder = Path(bpy.path.abspath(s.project_dir)) / 'Export' / '.unreal-actions' / uuid.uuid4().hex[:12]
         snapshot = folder / 'scripts'
         snapshot.mkdir(parents=True, exist_ok=False)
-        for name in ('unreal_character.py','unreal_assembly.py','unreal_assembly_textures.py','unreal_assembly_eyes.py','unreal_assembly_auxiliary.py','unreal_eye_overlays.py','process_ref.py','unreal_eyes.py','unreal_import.py','unreal_artist_state.py','unreal_web.py','resource_budget.py','unreal_groom.py','unreal_web_capture.py','unreal_web_appearance.py','unreal_web_bake_inputs.py','unreal_web_skin_motion.py','unreal_web_textures.py','native_web_materials.py','unreal_pose_bank.py','native_face_recipes.py'):
+        for name in ('unreal_character.py','unreal_assembly.py','unreal_assembly_textures.py','unreal_assembly_eyes.py','unreal_assembly_auxiliary.py','unreal_eye_overlays.py','process_ref.py','unreal_eyes.py','unreal_import.py','unreal_artist_state.py','unreal_web.py','resource_budget.py','unreal_groom.py','unreal_groom_representations.py','unreal_web_capture.py','unreal_web_appearance.py','unreal_web_bake_inputs.py','unreal_web_skin_motion.py','unreal_web_textures.py','native_web_materials.py','unreal_pose_bank.py','native_face_recipes.py'):
             shutil.copy2(Path(__file__).with_name(name),snapshot/name)
     job = {'scene': context.scene, 'folder': folder, 'snapshot': snapshot,
            'receipt': folder/'receipt.json', 'events':queue.Queue(),

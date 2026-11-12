@@ -172,6 +172,9 @@ def capture_poses(mesh,samples,destination,*,lods,source_component=None):
     destination=Path(destination).resolve();samples=list(samples);lods=list(lods)
     if destination.exists() or not samples or len(samples)>128 or len({row['name'] for row in samples})!=len(samples) or any(not row['name'].isalnum() for row in samples):raise ValueError('Choose a fresh capture folder and distinct named control samples')
     if not lods or len(set(lods))!=len(lods) or any(type(lod) is not int or lod<0 for lod in lods):raise ValueError('Choose distinct native face LOD indices')
+    count=unreal.get_editor_subsystem(unreal.SkeletalMeshEditorSubsystem).get_lod_count(mesh)
+    if any(lod>=count for lod in lods):raise ValueError('A requested face LOD does not exist on this mesh')
+    verify=runpy.run_path(str(Path(__file__).with_name('expression_controls.py')))['verify_pose_capture']
     package=mesh.get_path_name().split('.')[0];source_file=None;source_sha=None
     dirty=lambda:package in {p.get_path_name() for p in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()}
     if dirty():raise ValueError('Save the source face edits before capturing calibration poses')
@@ -188,7 +191,12 @@ def capture_poses(mesh,samples,destination,*,lods,source_component=None):
             if not unreal.CreateMHExpressionLibrary.export_engine_control_pose(mesh,json.dumps(row['controls']),str(file),source_component,True,lod):
                 report.update(status='failed',failed_pose=name);(destination/'capture.json').write_text(json.dumps(report,indent=2));raise RuntimeError('Native pose capture failed: '+name)
             storage.add(file);report['storage']=storage.report()
-            report['poses'].append(dict(name=row['name'],lod=lod,controls=row['controls'],file=str(file)));(destination/'capture.json').write_text(json.dumps(report,indent=2))
+            report['poses'].append(dict(name=row['name'],lod=lod,controls=row['controls'],file=str(file)))
+            try:verify(dict(poses=[report['poses'][-1]]),mesh.get_path_name())
+            except Exception:
+                report.update(status='failed',failed_pose=name);(destination/'capture.json').write_text(json.dumps(report,indent=2));raise
+            (destination/'capture.json').write_text(json.dumps(report,indent=2))
     if dirty() or (source_file and digest(source_file)!=source_sha) or source_fingerprints(mesh)!=source_files:
         report.update(status='failed',source_changed_during_capture=True);(destination/'capture.json').write_text(json.dumps(report,indent=2));raise ValueError('The source face changed during capture; retain the samples for diagnosis and capture a fresh revision')
+    verify(report,mesh.get_path_name())
     report['status']='complete';(destination/'capture.json').write_text(json.dumps(report,indent=2));return report

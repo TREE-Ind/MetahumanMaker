@@ -31,4 +31,4 @@ Install/enable the packaged add-on in an isolated Blender profile and verify its
 4. Tag the tested source commit and attach the prepared installers, audited source ZIP, checksums and launch film. Use release notes that distinguish the add-on and bridge versions and state the tested environment.
 5. After the media has a real hosted URL, add that permalink to the README. Do not publish a guessed video URL or a badge for checks that have not run.
 
-Retain required third-party notices. The launch film uses Scott Buckley's **Emergent** under CC BY 4.0; copy its prepared music credit into the public video/release description. See [media notes](media/README.md).
+Retain required third-party notices. The current four-character launch film uses the project owner's commercially licensed Soft Gravity track. Archived earlier films retain their own music credits; see [media notes](media/README.md).

@@ -10,6 +10,23 @@ from mathutils.bvhtree import BVHTree
 from . import geometry
 
 
+class FitValidationError(ValueError):
+    """A computed candidate failed geometric validation before publication."""
+
+
+def validate_fit_triangles(context, template, base, candidate):
+    template.data.calc_loop_triangles()
+    triangles=np.array([row.vertices[:] for row in template.data.loop_triangles],dtype=np.int32).reshape(-1,3)
+    scale=context.scene.unit_settings.scale_length*100
+    def areas(points):
+        corners=np.asarray(points*scale,dtype=np.float32)[triangles]
+        return np.linalg.norm(np.cross(corners[:,1]-corners[:,0],corners[:,2]-corners[:,0]),axis=1)*.5
+    before,after=areas(base),areas(candidate)
+    introduced=(before>1e-6)&((after<=1e-6)|~np.isfinite(after))
+    if introduced.any():
+        raise FitValidationError(str(int(introduced.sum()))+' new collapsed triangles in the fitted surface; previous character retained')
+
+
 def transform_state(obj):
     fields=('location','scale','rotation_euler','rotation_quaternion','rotation_axis_angle')
     return dict(rotation_mode=obj.rotation_mode,**{name:list(getattr(obj,name)) for name in fields})
@@ -94,28 +111,51 @@ def check_inputs(settings):
         )
 
 
-def source_bvh(context, obj):
+def source_bvh(context, obj, *, include_normals=False):
     evaluated = obj.evaluated_get(context.evaluated_depsgraph_get())
     mesh = evaluated.to_mesh()
     try:
         m = evaluated.matrix_world
-        return BVHTree.FromPolygons(
-            [m @ v.co for v in mesh.vertices], [p.vertices[:] for p in mesh.polygons]
-        )
+        points = [m @ v.co for v in mesh.vertices]
+        faces = [p.vertices[:] for p in mesh.polygons]
+        tree = BVHTree.FromPolygons(points, faces)
+        if not include_normals:
+            return tree
+        mesh.calc_loop_triangles()
+        corners = np.asarray(points)[np.asarray([triangle.vertices[:] for triangle in mesh.loop_triangles])]
+        cross = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
+        normals = np.zeros((len(faces), 3), dtype=float)
+        np.add.at(normals, [triangle.polygon_index for triangle in mesh.loop_triangles], cross)
+        normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-20)
+        return tree, normals
     finally:
         evaluated.to_mesh_clear()
 
 
-def nearest(bvh, vertices, max_distance=float("inf"), progress=None):
+def nearest(bvh, vertices, max_distance=float("inf"), progress=None, *,
+            normals=None, source_normals=None, normal_cosine=.5):
     result = np.asarray(vertices).copy()
     distances = np.full(len(vertices), np.inf)
     per_vertex = np.ndim(max_distance) != 0
+    if normals is not None:
+        from .region_projection import compatible_nearest
+        normals = np.asarray(normals, dtype=float)
+        if (normals.shape != result.shape or not np.isfinite(normals).all()
+                or source_normals is None or not 0 < normal_cosine < 1):
+            raise ValueError('Normal-aware projection needs matching normals and source faces')
+        span = float(np.linalg.norm(np.ptp(result, axis=0)))
     if per_vertex:
         max_distance = np.asarray(max_distance, dtype=float)
         if max_distance.shape != (len(vertices),) or np.isnan(max_distance).any() or np.any(max_distance < 0):
             raise ValueError('Projection distances must match the vertex count and be nonnegative')
     for i, p in enumerate(vertices):
-        hit, _, _, distance = bvh.find_nearest(Vector(p), float(max_distance[i]) if per_vertex else max_distance)
+        distance_limit = float(max_distance[i]) if per_vertex else max_distance
+        if normals is None:
+            hit, _, _, distance = bvh.find_nearest(Vector(p), distance_limit)
+        else:
+            candidate = compatible_nearest(bvh, p, normals[i], distance_limit,
+                                           span, source_normals, normal_cosine)
+            hit, distance = (candidate[0], candidate[3]) if candidate is not None else (None, np.inf)
         if hit is not None:
             result[i] = hit
             distances[i] = distance
@@ -124,6 +164,12 @@ def nearest(bvh, vertices, max_distance=float("inf"), progress=None):
     if progress:
         progress(len(vertices), len(vertices))
     return result, distances
+
+
+def marker_position(marker):
+    # Worker carriers retain the exact sampled world position. Reconstructing
+    # it through a parent inverse introduces float32 drift before registration.
+    return marker.get('_cm_fit_marker_world', marker.matrix_world.translation[:])
 
 
 def landmark_points(settings):
@@ -137,8 +183,8 @@ def landmark_points(settings):
                 raise ValueError(
                     "Landmarks belong to another Source/Template; clear and place them again"
                 )
-            source.append(pair.source.matrix_world.translation[:])
-            template.append(pair.template.matrix_world.translation[:])
+            source.append(marker_position(pair.source))
+            template.append(marker_position(pair.template))
     return np.asarray(source), np.asarray(template)
 
 
@@ -213,7 +259,7 @@ def generated_ear_regions(context, source, template, base):
     evaluated=source.evaluated_get(context.evaluated_depsgraph_get())
     mesh=evaluated.to_mesh()
     try:
-        if len(mesh.vertices)!=len(source.data.vertices):
+        if len(mesh.vertices)!=source.get('_cm_fit_original_vertices',len(source.data.vertices)):
             return []  # Changed source topology needs a new semantic assignment.
         group=source.vertex_groups['CM_Ears'].index
         source_weights=np.asarray([sum(w.weight for w in v.groups if w.group==group) for v in mesh.vertices])
@@ -239,7 +285,11 @@ def generated_ear_regions(context, source, template, base):
                     dst_low,dst_high=np.percentile(target_core,[1,99],axis=0)
                     scale=np.clip((src_high-src_low)/np.maximum(dst_high-dst_low,1e-8),.75,1.3)
                     registered=(base[indices]-(dst_low+dst_high)*.5)*scale+(src_low+src_high)*.5
-                regions.append((BVHTree.FromPolygons(coordinates,faces),indices,weights[indices],registered))
+                face_normals = np.array([np.cross(coordinates[list(face)], np.roll(coordinates[list(face)], -1, axis=0)).sum(0)
+                                         for face in faces])
+                face_normals /= np.maximum(np.linalg.norm(face_normals, axis=1, keepdims=True), 1e-20)
+                regions.append((BVHTree.FromPolygons(coordinates,faces),indices,weights[indices],registered,
+                                face_normals))
         return regions
     finally:
         evaluated.to_mesh_clear()
@@ -287,9 +337,37 @@ def wrap(context, settings):
             raise
 
 
-def _wrap(context, settings):
+def solve_wrap(context, settings):
+    """Compute a fit without publishing objects or changing accepted parts."""
+    features=getattr(context.scene,'cm_features',None)
+    try:return _solve_wrap(context,settings)
+    except FitValidationError as primary_error:
+        if not features or settings.part!='HEAD' or features.wrap_method!='AUTO' or features.conservative:
+            raise
+        was_set=features.is_property_set('conservative');previous=features.conservative
+        features.conservative=True
+        try:
+            try:fit=_solve_wrap(context,settings)
+            except FitValidationError as recovery_error:
+                raise FitValidationError('Automatic fit and conservative recovery failed. '
+                    'Primary: '+str(primary_error)+'. Recovery: '+str(recovery_error)) from recovery_error
+        finally:
+            if was_set:features.conservative=previous
+            else:features.property_unset('conservative')
+        fit['properties']['cm_wrap_recovery']=json.dumps(dict(attempts=2,used=True,
+            method='CONSERVATIVE',primary_error=str(primary_error),review_required=True))
+        return fit
+
+
+def _wrap(context,settings):
+    from . import wrap_fit
+    fit=wrap_fit.consume(context,settings,'SURFACE')
+    if fit is None:fit=solve_wrap(context,settings)
+    return publish_wrap(context,settings,fit)
+
+
+def _solve_wrap(context, settings):
     check_inputs(settings)
-    previous_result = settings.result
     base = coordinates(settings.template)
     current = base.copy()
     span = np.linalg.norm(np.ptp(base, axis=0))
@@ -325,15 +403,21 @@ def _wrap(context, settings):
         refined = geometry.limit_extrapolation(current, refined, controls, destinations)
         current += (refined - current) * settings.local_landmark_weights[:, None]
     features = getattr(context.scene, "cm_features", None)
-    from . import wrap_proxy
+    from . import wrap_proxy, region_projection
     proxy = wrap_proxy.source(context,settings,features)
-    bvh = source_bvh(context, proxy)
+    normal_fit = bool(settings.part == 'HEAD' and settings.source.get('cm_gnm'))
+    if normal_fit:
+        bvh, source_normals = source_bvh(context, proxy, include_normals=True)
+    else:
+        bvh = source_bvh(context, proxy)
     ear_regions=generated_ear_regions(context,settings.source,settings.template,base) if settings.part in {'HEAD','FULL_BODY'} else []
-    for _,indices,influence,registered in ear_regions:
+    for _,indices,influence,registered,_ in ear_regions:
         if registered is not None:
             current[indices]=current[indices]*(1-influence[:,None])+registered*influence[:,None]
     reference = current.copy()
     mesh_edges = edges(settings.template)
+    retain_ears = bool(settings.source.get('cm_gnm') and features
+                       and features.retain_generated_ear_detail)
     interior = np.zeros(len(base), dtype=bool)
     if features and getattr(features, 'preserve_mouth_interior', True):
         if hasattr(settings, 'mouth_interior'):
@@ -390,7 +474,7 @@ def _wrap(context, settings):
     if conservative:
         limit *= 0.4
     surface_guard = None
-    if conservative:
+    if conservative or normal_fit or ear_regions:
         # Start hard pins at their exact constraints. A backtracked step then
         # retains them, rather than interpolating from an unconstrained RBF fit.
         if has_splits:
@@ -403,6 +487,10 @@ def _wrap(context, settings):
         triangles = np.empty((len(settings.template.data.loop_triangles), 3), dtype=np.int32)
         settings.template.data.loop_triangles.foreach_get('vertices', triangles.ravel())
         surface_guard = geometry.SurfaceStepGuard(current, triangles, weld if has_splits else None)
+    if normal_fit:
+        from . import region_projection
+        reference_quality = region_projection.triangle_quality(current, triangles)
+        allowed_contacts = region_projection.crossings(current, triangles, weld if has_splits else None, pairs=True)
     oral_guard = None
     if interior.any():
         settings.template.data.calc_loop_triangles()
@@ -423,10 +511,21 @@ def _wrap(context, settings):
     try:
         for iteration in range(iterations):
             preceding = current
-            projected, _ = nearest(bvh, current, limit)
+            facing_normals = region_projection.normals(current, triangles) if normal_fit or ear_regions else None
+            if normal_fit:
+                projected, _ = nearest(bvh, current, limit,
+                    normals=facing_normals, source_normals=source_normals)
+            else:
+                projected, _ = nearest(bvh, current, limit)
             projected[interior] = current[interior]
-            for ear_bvh, indices, influence, _ in ear_regions:
-                ear, _ = nearest(ear_bvh,current[indices],limit[indices] if np.ndim(limit) else limit)
+            for ear_bvh, indices, influence, _, ear_normals in ear_regions:
+                if retain_ears:
+                    # Generated sources infer coarse ears. The registered native
+                    # ear already matches their bounds without collapsing folds.
+                    ear = reference[indices]
+                else:
+                    ear, _ = nearest(ear_bvh,current[indices],limit[indices] if np.ndim(limit) else limit,
+                                     normals=facing_normals[indices], source_normals=ear_normals)
                 projected[indices]=projected[indices]*(1-influence[:,None])+ear*influence[:,None]
             step = current + settings.projection_strength * (projected - current)
             current = geometry.relax_displacement(
@@ -443,12 +542,18 @@ def _wrap(context, settings):
             # Pins are exact constraints relative to the original template, not cumulative blends.
             current = base * pins[:, None] + current * (1 - pins[:, None])
             if surface_guard is not None:
-                current = surface_guard.limit(preceding, current)
+                if normal_fit:
+                    current, _, _ = region_projection.limit_step(
+                        preceding, current, triangles, reference_quality, surface_guard,
+                        allowed_contacts, weld=weld if has_splits else None)
+                else:
+                    current = surface_guard.limit(preceding, current)
             if oral_guard is not None:
                 current = guard_oral(preceding, current)
             context.window_manager.progress_update(iteration + 1)
     finally:
         context.window_manager.progress_end()
+    fitted = current.copy() if normal_fit else None
     if interior.any():
         from .wrap_interiors import follow_boundary
         preceding = current
@@ -462,12 +567,46 @@ def _wrap(context, settings):
         allowed = (1-pins)*(~interior)
         current, regional_report = region_projection.refine_paired(context, settings.source,
             settings.template, current, iterations=min(iterations, 16), limits=allowed)
+    if normal_fit:
+        current, _, _ = region_projection.limit_step(
+            fitted, current, triangles, reference_quality, surface_guard,
+            allowed_contacts, weld=weld if has_splits else None)
     if not np.isfinite(current).all():
-        raise ValueError(
+        raise FitValidationError(
             "Solver produced invalid coordinates; adjust landmarks and distance"
         )
+    validate_fit_triangles(context,settings.template,base,current)
+    properties={}
+    if regional_report:properties['cm_region_projection']=json.dumps(regional_report)
+    if surface_guard is not None:
+        properties['cm_conservative_surface']=json.dumps({
+            'limited_steps':surface_guard.limited_steps,'limited_vertex_steps':surface_guard.limited_vertices,
+            'iterations':iterations,'normal_compatible_projection':normal_fit})
+    if protected_neck:properties['cm_generated_neck_protected']=True
+    if ear_regions:
+        properties.update(cm_generated_ear_regions=len(ear_regions),cm_source_ear_regions=len(ear_regions),
+            cm_retained_generated_ear_detail=retain_ears)
+    if settings.part=='BODY':properties['cm_body_source']='SCAN'
+    _,distances=nearest(bvh,current)
+    return dict(points=current,surface_rms=float(np.sqrt(np.mean(distances**2))),properties=properties)
+
+
+def publish_wrap(context,settings,fit):
+    """Publish a validated numerical result through the existing transaction."""
+    previous_result=settings.result
+    features=getattr(context.scene,'cm_features',None)
+    current=np.asarray(fit['points'],dtype=np.float64)
+    if current.shape!=(len(settings.template.data.vertices),3) or not np.isfinite(current).all():
+        raise ValueError('Fitted vertex buffer does not match the current template')
+    if not np.isfinite(fit['surface_rms']):raise ValueError('Fitted surface error is not finite')
+    validate_fit_triangles(context,settings.template,coordinates(settings.template),current)
+    allowed={'cm_region_projection','cm_conservative_surface','cm_generated_neck_protected',
+        'cm_generated_ear_regions','cm_source_ear_regions','cm_retained_generated_ear_detail',
+        'cm_body_source','cm_wrap_recovery'}
+    if set(fit['properties'])-allowed:raise ValueError('Unknown fit publication metadata')
     result = duplicate(context, settings.template, settings.character_name + "_Wrapped")
     try:
+        if 'cm_wrap_recovery' in result:del result['cm_wrap_recovery']
         result.shape_key_add(name="Basis")
         key = result.shape_key_add(name="Wrapped")
         key.data.foreach_set("co", to_local(result, current).ravel())
@@ -475,22 +614,8 @@ def _wrap(context, settings):
         result["cm_template_topology"] = topology(settings.template)
         result["cm_part"] = settings.part
         result["cm_role"] = "RESULT"
-        if regional_report:
-            result['cm_region_projection'] = json.dumps(regional_report)
-        if surface_guard is not None:
-            result['cm_conservative_surface'] = json.dumps({
-                'limited_steps': surface_guard.limited_steps,
-                'limited_vertex_steps': surface_guard.limited_vertices,
-                'iterations': iterations})
-        elif 'cm_conservative_surface' in result:
-            del result['cm_conservative_surface']
-        if protected_neck:
-            result['cm_generated_neck_protected'] = True
-        if ear_regions:
-            result['cm_generated_ear_regions'] = len(ear_regions)
-            result['cm_source_ear_regions'] = len(ear_regions)
-        if settings.part == "BODY":
-            result["cm_body_source"] = "SCAN"
+        if 'cm_conservative_surface' in result:del result['cm_conservative_surface']
+        for name,value in fit['properties'].items():result[name]=value
         from .guided import signature
 
         result["cm_source_signature"] = signature(settings.source)
@@ -503,8 +628,7 @@ def _wrap(context, settings):
                 features.head_result = result
             elif settings.part == "BODY":
                 features.body_result = result
-        projected, distances = nearest(bvh, current)
-        settings.last_error = float(np.sqrt(np.mean(distances**2)))
+        settings.last_error = float(fit['surface_rms'])
         settings.stage = "REFINE"
         if (
             features
@@ -590,8 +714,16 @@ def refine_surface(context, settings, features):
         np.linalg.norm(np.ptp(base, axis=0)) * settings.max_distance)
     is_body = obj == features.body_result or settings.part == 'BODY'
     regions = generated_ear_regions(context, settings.source, obj, base) if not is_body else []
-    for tree, indices, weights, _registered in regions:
-        ear, _ = nearest(tree, base[indices])
+    if regions:
+        obj.data.calc_loop_triangles()
+        ear_triangles = np.asarray([triangle.vertices[:] for triangle in obj.data.loop_triangles], dtype=int)
+        facing_normals = region_projection.normals(base, ear_triangles)
+    for tree, indices, weights, _registered, ear_normals in regions:
+        if settings.source.get('cm_gnm') and features.retain_generated_ear_detail:
+            ear = base[indices]
+        else:
+            ear, _ = nearest(tree, base[indices], np.linalg.norm(np.ptp(base, axis=0)) * settings.max_distance,
+                             normals=facing_normals[indices], source_normals=ear_normals)
         projected[indices] = projected[indices] * (1 - weights[:, None]) + ear * weights[:, None]
     interior = (wrap_interiors.mouth_mask(obj) if not is_body
                 and features.preserve_mouth_interior else np.zeros(len(base), dtype=bool))
@@ -616,7 +748,10 @@ def refine_surface(context, settings, features):
     obj.data.loop_triangles.foreach_get('vertices', triangles.ravel())
     floor = 2.5e-10 / context.scene.unit_settings.scale_length ** 2
     guard = geometry.SurfaceStepGuard(base, triangles, families, minimum_double_area=floor)
-    candidate = guard.limit(base, candidate)
+    allowed_contacts = region_projection.crossings(base, triangles, families, pairs=True)
+    candidate, collision_limited, distortion_limited = region_projection.limit_step(
+        base, candidate, triangles, region_projection.triangle_quality(base, triangles),
+        guard, allowed_contacts, weld=families)
     if np.linalg.norm(candidate - base, axis=1).max() < 1e-9:
         if regional_report:
             obj['cm_region_projection'] = json.dumps(regional_report)
@@ -624,6 +759,7 @@ def refine_surface(context, settings, features):
         return False
     from . import native_surface_commit
     native_report=native_surface_commit.commit(context,obj,'Refine',candidate,reference=base,movable=influence>0)
+    native_report.update(collision_limited=collision_limited, distortion_limited=distortion_limited)
     obj['cm_region_projection_native']=json.dumps(native_report)
     settings.status = 'Surface refined. Review the fit and refresh changed maps before delivery.'
     if regional_report:

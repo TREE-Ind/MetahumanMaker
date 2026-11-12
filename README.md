@@ -14,13 +14,15 @@ A Blender add-on from [TREE Industries](https://tree.industries/) for turning ph
 
 [Get started](docs/quickstart.md) · [Install](docs/installation.md) · [Agent guide](docs/agents.md) · [Troubleshooting](docs/troubleshooting.md) · [Contribute](CONTRIBUTING.md)
 
-[Download v0.346.0](https://github.com/TREE-Ind/MetahumanMaker/releases/tag/v0.346.0) ? [Watch the launch film](https://github.com/TREE-Ind/MetahumanMaker/releases/download/v0.346.0/TREE_Industries_MetaHuman_Maker_Launch_Inspection.mp4) ? [Film details](docs/launch.md)
+[Download v0.346.0](https://github.com/TREE-Ind/MetahumanMaker/releases/tag/v0.346.0) · [Watch the launch film](https://github.com/TREE-Ind/MetahumanMaker/releases/download/v0.346.0/TREE_Industries_MetaHuman_Maker_Launch_Four_Characters.mp4) · [Film details](docs/launch.md)
 
-[![MetaHuman Maker: the Orc, photo-derived human, outfitted Genie and gray alien, created with the add-on](docs/media/hero.jpg)](https://github.com/TREE-Ind/MetahumanMaker/releases/download/v0.346.0/TREE_Industries_MetaHuman_Maker_Launch_Inspection.mp4)
+[![MetaHuman Maker: the Orc, outfitted Genie, Warrior and gray Alien, created with the add-on](docs/media/hero.jpg)](https://github.com/TREE-Ind/MetahumanMaker/releases/download/v0.346.0/TREE_Industries_MetaHuman_Maker_Launch_Four_Characters.mp4)
+
+The `main` and `development` branches contain source updates beyond the packaged v0.346.0 preview. Build from source to use those updates, and rebuild the bridge when native code changes. Photo fitting creates an editable starting identity; accurate likeness and hair require further authoring.
 
 ## Bring the reference. Keep creative control.
 
-- **Start from a mesh or photo.** Wrap a scan, sculpt or generated mesh to your licensed MetaHuman reference topology, or fit a starting face from a photo.
+- **Start from a mesh or photo.** Wrap a scan, sculpt or generated mesh to your licensed MetaHuman reference topology, or fit a starting face from a photo. Add up to four supporting views for optional shape refinement and texture coverage, with projection up to 4K. Generated side views infer unseen features.
 - **Shape an editable character.** Refine head and body proportions, use anatomical body controls, work with sculpt layers, and repair regions without replacing the whole character.
 - **Let an agent do the tool work.** Inspect scene state, invoke Blender operators, adjust the result, and observe background jobs through a trusted Python bridge.
 - **Create the detail the source is missing.** Combine source-guided cleanup, optional learned restoration and generative editing with an explicit texture invention budget and protection masks.

@@ -10,6 +10,9 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/World.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Components/LODSyncComponent.h"
+#include "GameFramework/Actor.h"
+#include "LODSyncInterface.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSingleNodeInstance.h"
@@ -31,6 +34,62 @@
 #include "Rendering/SkinWeightVertexBuffer.h"
 #include "Animation/MorphTarget.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "LevelEditorViewport.h"
+#include "Misc/Guid.h"
+
+namespace
+{
+    struct FCreateMHViewportRefresh
+    {
+        FLevelEditorViewportClient* Client;
+        FText Label;
+    };
+    TMap<FString,FCreateMHViewportRefresh> CreateMHViewportRefreshes;
+    FString ViewportRefreshJSON(const TSharedRef<FJsonObject>& Object)
+    {
+        FString Text;
+        FJsonSerializer::Serialize(Object,TJsonWriterFactory<>::Create(&Text));
+        return Text;
+    }
+}
+
+FString UCreateMHExpressionLibrary::BeginEditorViewportRefresh()
+{
+    if (!IsInGameThread() || !GEditor || !GCurrentLevelEditingViewportClient) return FString();
+    auto* Client=GCurrentLevelEditingViewportClient;
+    if (!GEditor->GetLevelViewportClients().Contains(Client) || Client->IsSimulateInEditorViewport()) return FString();
+    const FString Token=FGuid::NewGuid().ToString(EGuidFormats::Digits);
+    const FText Label=FText::FromString(TEXT("MetaHuman Maker Capture ")+Token);
+    auto Result=MakeShared<FJsonObject>();
+    Result->SetStringField(TEXT("token"),Token);
+    Result->SetBoolField(TEXT("realtime_before"),Client->IsRealtime());
+    Client->AddRealtimeOverride(true,Label);
+    Client->Invalidate();
+    CreateMHViewportRefreshes.Add(Token,{Client,Label});
+    Result->SetBoolField(TEXT("realtime_active"),Client->IsRealtime());
+    return ViewportRefreshJSON(Result);
+}
+
+FString UCreateMHExpressionLibrary::EndEditorViewportRefresh(const FString& Token)
+{
+    if (!IsInGameThread()) return FString();
+    FCreateMHViewportRefresh Refresh;
+    if (!CreateMHViewportRefreshes.RemoveAndCopyValue(Token,Refresh)) return FString();
+    auto Result=MakeShared<FJsonObject>();
+    const bool Open=GEditor && GEditor->GetLevelViewportClients().Contains(Refresh.Client);
+    Result->SetBoolField(TEXT("viewport_open"),Open);
+    if (Open)
+    {
+        // Remove only this capture's override, retaining other systems and
+        // any realtime preference the artist changed while the capture ran.
+        const bool Removed=Refresh.Client->RemoveRealtimeOverride(Refresh.Label,false);
+        Result->SetBoolField(TEXT("override_removed"),Removed);
+        Result->SetBoolField(TEXT("realtime_after"),Refresh.Client->IsRealtime());
+        Refresh.Client->Invalidate();
+    }
+    Result->SetStringField(TEXT("status"),TEXT("complete"));
+    return ViewportRefreshJSON(Result);
+}
 
 bool UCreateMHExpressionLibrary::SupportsIsolatedPoseEvaluation() { return true; }
 bool UCreateMHExpressionLibrary::SupportsMaterialCurveSampling() { return true; }
@@ -161,6 +220,62 @@ bool UCreateMHExpressionLibrary::RestoreComponentPreviewState(USkeletalMeshCompo
         if (auto Instance=Component->GetSingleNodeInstance()) {Instance->SetLooping(Looping);Instance->SetPlaying(Playing);}
     }
     Component->SetForcedLOD(int32(LOD));Component->bPauseAnims=Paused;Component->SetUpdateAnimationInEditor(Tick);
+    return true;
+}
+
+FString UCreateMHExpressionLibrary::CaptureEditorLODState(AActor* Actor)
+{
+    if (!IsInGameThread() || !Actor || !Actor->GetWorld() || Actor->GetWorld()->IsGameWorld()) return TEXT("");
+    TArray<UActorComponent*> Components;Actor->GetComponents(Components);
+    auto Root=MakeShared<FJsonObject>();
+    for (UActorComponent* Component:Components) if (auto LOD=Cast<ILODSyncInterface>(Component))
+    {
+        auto Row=MakeShared<FJsonObject>();
+        Row->SetNumberField(TEXT("rendered"),LOD->GetForceRenderedLOD());
+        Row->SetNumberField(TEXT("streamed"),LOD->GetForceStreamedLOD());
+        Root->SetObjectField(Component->GetPathName(),Row);
+    }
+    FString JSON;FJsonSerializer::Serialize(Root,TJsonWriterFactory<>::Create(&JSON));return JSON;
+}
+
+bool UCreateMHExpressionLibrary::RestoreEditorLODState(AActor* Actor,const FString& StateJSON)
+{
+    if (!IsInGameThread() || !Actor || !Actor->GetWorld() || Actor->GetWorld()->IsGameWorld()) return false;
+    TSharedPtr<FJsonObject> Root;if (!FJsonSerializer::Deserialize(TJsonReaderFactory<>::Create(StateJSON),Root) || !Root) return false;
+    TArray<UActorComponent*> Components;Actor->GetComponents(Components);
+    struct FRestore {ILODSyncInterface* LOD;int32 Rendered;int32 Streamed;};TArray<FRestore> Rows;
+    for (UActorComponent* Component:Components) if (auto LOD=Cast<ILODSyncInterface>(Component))
+    {
+        const TSharedPtr<FJsonObject>* Row=nullptr;double Rendered=0,Streamed=0;
+        if (!Root->TryGetObjectField(Component->GetPathName(),Row) || !Row || !(*Row)->TryGetNumberField(TEXT("rendered"),Rendered)
+                || !(*Row)->TryGetNumberField(TEXT("streamed"),Streamed) || !FMath::IsFinite(Rendered) || !FMath::IsFinite(Streamed)
+                || Rendered<-1 || Streamed<-1 || Rendered>128 || Streamed>128 || Rendered!=int32(Rendered) || Streamed!=int32(Streamed)) return false;
+        Rows.Add({LOD,int32(Rendered),int32(Streamed)});
+    }
+    if (Rows.Num()!=Root->Values.Num()) return false;
+    for (const FRestore& Row:Rows) {Row.LOD->SetForceRenderedLOD(Row.Rendered);Row.LOD->SetForceStreamedLOD(Row.Streamed);}
+    return true;
+}
+
+bool UCreateMHExpressionLibrary::RefreshEditorLODSync(ULODSyncComponent* Component,int32 ForcedLOD,bool bUpdate)
+{
+    if (!IsInGameThread() || !Component || !Component->IsRegistered() || !Component->GetWorld() || Component->GetWorld()->IsGameWorld() || ForcedLOD<-2 || ForcedLOD>128) return false;
+    // Avoid an editor property change that can reconstruct the Blueprint and
+    // invalidate the live components during a temporary pose review.
+    if (ForcedLOD>=-1) Component->ForcedLOD=ForcedLOD;
+    if (bUpdate) Component->UpdateLOD();return true;
+}
+
+bool UCreateMHExpressionLibrary::RefreshEditorPreviewPose(USkeletalMeshComponent* Component)
+{
+    if (!IsInGameThread() || !Component || !Component->IsRegistered()
+            || !Component->GetSkeletalMeshAsset() || !Component->GetWorld()
+            || Component->GetWorld()->IsGameWorld()) return false;
+    Component->TickAnimation(0.0f,false);
+    Component->RefreshBoneTransforms();
+    Component->UpdateComponentToWorld();
+    Component->MarkRenderTransformDirty();
+    Component->MarkRenderDynamicDataDirty();
     return true;
 }
 
@@ -373,13 +488,22 @@ bool UCreateMHExpressionLibrary::ExportEngineFacePose(USkeletalMesh* SourceMesh,
     TArray<TSharedPtr<FJsonValue>> Sections;
     TArray<uint8> SkinLinearBytes;
     if (bIncludeSkinMatrices) SkinLinearBytes.SetNumZeroed(Positions.Num()*9*sizeof(float));
-    for (const auto& Section : LOD.RenderSections)
+    const FSkeletalMeshLODInfo* LODInfo=Mesh->GetLODInfo(LODIndex);
+    for (int32 SectionIndex=0;SectionIndex<LOD.RenderSections.Num();++SectionIndex)
     {
+        const auto& Section=LOD.RenderSections[SectionIndex];
+        int32 MaterialIndex=Section.MaterialIndex;
+        // Reduced LODs can omit saliva/attachments and remap section slots.
+        // Resolve the same override used by the native skeletal mesh renderer.
+        if (LODInfo && LODInfo->LODMaterialMap.IsValidIndex(SectionIndex)
+                && LODInfo->LODMaterialMap[SectionIndex]!=INDEX_NONE)
+            MaterialIndex=LODInfo->LODMaterialMap[SectionIndex];
+        if (!Mesh->GetMaterials().IsValidIndex(MaterialIndex)) return false;
         TSharedRef<FJsonObject> Record=MakeShared<FJsonObject>();
-        Record->SetNumberField(TEXT("material"),Section.MaterialIndex);
+        Record->SetNumberField(TEXT("material"),MaterialIndex);
         Record->SetNumberField(TEXT("start"),Section.BaseVertexIndex);
         Record->SetNumberField(TEXT("count"),Section.NumVertices);
-        Record->SetStringField(TEXT("material_name"),Mesh->GetMaterials()[Section.MaterialIndex].ImportedMaterialSlotName.ToString());
+        Record->SetStringField(TEXT("material_name"),Mesh->GetMaterials()[MaterialIndex].ImportedMaterialSlotName.ToString());
         Sections.Add(MakeShared<FJsonValueObject>(Record));
         for (uint32 V=Section.BaseVertexIndex;V<Section.BaseVertexIndex+Section.NumVertices;++V)
         {

@@ -2,7 +2,6 @@
 from pathlib import Path
 import hashlib
 import json
-import shutil
 import subprocess
 import traceback
 import uuid
@@ -54,19 +53,27 @@ def start(context,s,f):
     slots=[(slot,getattr(f,slot.lower())) for slot in ('WM1','WM2','WM3') if getattr(f,slot.lower())]
     if not slots:
         return False
+    from . import mesh_ops
+    mesh_ops.check_mesh(s.result,'Accepted head')
     from . import resource_budget
     resource_budget.require('retained wrinkle updates',512*resource_budget.MIB+
         resource_budget.meshes([s.result,s.detail,*[obj for _,obj in slots]]))
     root=Path(bpy.path.abspath(s.project_dir)).resolve()
-    root.mkdir(parents=True,exist_ok=True)
-    if shutil.disk_usage(root).free<2*1024**3:
-        raise ValueError('Retained wrinkle update needs at least 2 GiB free for its temporary snapshot')
+    storage=resource_budget.scene_snapshot_storage(context.scene)
+    base=s.detail or s.result
+    output=sum(max(len(old.data.vertices),len(base.data.vertices))*(192+24*len(old.data.shape_keys.key_blocks))
+        for _,old in slots if old.data.shape_keys)
+    storage['output_estimate_bytes']=output
+    storage['required_bytes']=max(2*resource_budget.GIB,
+        2*max(storage['scene_estimate_bytes'],output)+512*resource_budget.MIB)
+    resource_budget.require_disk('retained wrinkle updates',root,storage['required_bytes'])
     folder=root/'WrinkleUpdates'/'.jobs'/uuid.uuid4().hex[:12]
     folder.mkdir(parents=True)
     ident=folder.name
-    request={'id':ident,'scene':context.scene.name}
+    request={'id':ident,'scene':context.scene.name,'storage_budget':storage}
     (folder/'request.json').write_text(json.dumps(request,indent=2))
     job={'folder':folder,'id':ident,'scene':context.scene,'cancel':False,'slots':slots}
+    pending_before=[(old,'cm_wrinkle_update_pending' in old,old.get('cm_wrinkle_update_pending')) for _,old in slots]
     try:
         for _,old in slots:
             old['cm_wrinkle_update_pending']=s.result
@@ -82,7 +89,11 @@ def start(context,s,f):
         bpy.app.timers.register(poll,first_interval=.2,persistent=True)
         return True
     except Exception:
-        cleanup(job)
+        for old,existed,value in pending_before:
+            if existed:old['cm_wrinkle_update_pending']=value
+            elif 'cm_wrinkle_update_pending' in old:del old['cm_wrinkle_update_pending']
+        process=job.get('process')
+        if process is None or process.poll() is not None:cleanup(job)
         raise
 
 

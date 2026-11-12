@@ -74,6 +74,9 @@ def preview_clip(actor, animation, sample_time=0., *, force_lod=None,lock_lod_sy
         raise ValueError('Choose a sample inside the animation duration')
     if force_lod is not None and (type(force_lod) is not int or force_lod<0):
         raise ValueError('LOD must be a nonnegative native mesh LOD index')
+    native=getattr(unreal,'CreateMHExpressionLibrary',None)
+    if not native or not hasattr(native,'refresh_editor_preview_pose'):
+        raise ValueError('Update the matching native bridge for immediate editor pose evaluation')
     components=actor.get_components_by_class(unreal.SkeletalMeshComponent)
     faces=[c for c in components if c.get_name()=='Face']
     if len(faces)!=1 or not faces[0].get_skeletal_mesh_asset():raise ValueError('Choose an actor with one assembled Face component')
@@ -82,11 +85,25 @@ def preview_clip(actor, animation, sample_time=0., *, force_lod=None,lock_lod_sy
         raise ValueError('The preview clip belongs to another face skeleton')
     if face.get_editor_property('disable_post_process_blueprint'):
         raise ValueError('Enable native face post-processing before previewing facial controls')
-    # A fitted comparison camera can change LODSync's distance-driven output.
-    # The review owns a fixed pose/face LOD; its caller snapshots and restores
-    # the instance sync tick state alongside component playback.
+    # Force the mapped character group, rather than freezing a stale groom or
+    # wardrobe LOD when only the face is changed. Keep sync ticking so its
+    # requested LODs can become renderable after asynchronous streaming.
     if lock_lod_sync:
-        for sync in actor.get_components_by_class(unreal.LODSyncComponent):sync.set_component_tick_enabled(False)
+        if not hasattr(native,'refresh_editor_lod_sync'):raise ValueError('Update the matching native bridge for synchronized character LOD review')
+        for sync in actor.get_components_by_class(unreal.LODSyncComponent):
+            managed={str(row.get_editor_property('name')) for row in sync.get_editor_property('components_to_sync') if row.get_editor_property('sync_option')!=unreal.SyncOption.DISABLED}
+            if face.get_name() not in managed:continue
+            if force_lod is None and not sync.is_component_tick_enabled():continue
+            global_lod=-2
+            if force_lod is not None:
+                mappings=sync.get_editor_property('custom_lod_mapping')
+                mapping=next((list(value.get_editor_property('mapping')) for key,value in mappings.items() if str(key)==face.get_name()),None)
+                choices=[i for i,value in enumerate(mapping) if value==force_lod] if mapping is not None else [force_lod]
+                choices=[i for i in choices if i>=sync.get_editor_property('min_lod')]
+                if not choices:raise ValueError('The native LOD mapping cannot provide this face LOD')
+                global_lod=choices[0]
+            sync.set_component_tick_enabled(True)
+            if not native.refresh_editor_lod_sync(sync,global_lod):raise RuntimeError('Could not refresh the character LOD mapping')
     # Parent components must refresh before the face consumes their pose.
     for component in [c for c in components if c!=face]+[face]:
         component.set_update_animation_in_editor(True)
@@ -94,6 +111,9 @@ def preview_clip(actor, animation, sample_time=0., *, force_lod=None,lock_lod_sy
         component.reinitialize_anim_nodes()
     if force_lod is not None:face.set_forced_lod(force_lod+1)
     face.play_animation(animation,False);face.set_play_rate(0.);face.set_position(sample_time,False)
+    for component in [c for c in components if c!=face]+[face]:
+        if component.get_skeletal_mesh_asset() and not native.refresh_editor_preview_pose(component):
+            raise RuntimeError('Could not evaluate the editor pose on '+component.get_name())
     return dict(status='previewing',actor=actor.get_path_name(),mesh=mesh.get_path_name(),
                 animation=animation.get_path_name(),sample_time=sample_time,
                 editor_pose_dependencies=[c.get_name() for c in components],assets_saved=0)

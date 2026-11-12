@@ -15,11 +15,18 @@ from mathutils import Matrix, Vector
 from . import mesh_ops as m
 
 _JOB=None
+_PUBLISHING=False
 _PENDING_CLEANUP=set()
 
 
 def running():
     return _JOB is not None
+
+
+def publishing():return _PUBLISHING
+
+
+def fitting():return bool(_JOB and _JOB.get('phase')=='FIT')
 
 
 def actors(scene):
@@ -47,27 +54,34 @@ def needs_detection(context):
 
 
 def state(context,scene):
+    # Include edits made between UI ticks, before sampling landmark world frames.
+    context.view_layer.update()
     from .scan_jobs import geometry_stamp
     from .workflow import group_weights
     s,f=scene.cm_settings,scene.cm_features
     return ([s.part,s.project_dir,s.character_name,f.front_axis,f.source_front_axis,f.landmark_kind,
-        f.wrap_method,f.wrap_quality,f.conservative,f.is_mask,s.iterations,s.projection_strength,
+        scene.unit_settings.scale_length,scene.frame_current,scene.frame_subframe,
+        f.wrap_method,f.wrap_quality,f.conservative,f.is_mask,f.preserve_mouth_interior,f.retain_generated_ear_detail,
+        s.landmark_regularization,s.iterations,s.projection_strength,
         s.smoothing,s.landmark_radius,s.max_distance,f.expression_active,f.body_editing,
         f.full_sculpt,f.restore_editing,f.full_head,f.model_dir,f.inference_python,f.expression_reference,
-        [s.source.get(key) for key in ('cm_front_axis','cm_gnm','cm_head_placement')],
+        [s.source.get(key) for key in ('cm_front_axis','cm_gnm','cm_head_placement','cm_source_alignment')],
         [(p.name,p.source.as_pointer() if p.source else 0,p.template.as_pointer() if p.template else 0,
-          list(p.source.location) if p.source else [],list(p.template.location) if p.template else []) for p in s.landmarks]],
-        [(obj.as_pointer(),geometry_stamp(context,obj,groups=True),
+          (p.source.parent.as_pointer() if p.source.parent else 0,list(p.source.matrix_world.translation)) if p.source else [],
+          (p.template.parent.as_pointer() if p.template.parent else 0,list(p.template.matrix_world.translation)) if p.template else []) for p in s.landmarks]],
+        [(obj.as_pointer(),geometry_stamp(context,obj,groups=True),hashlib.sha256(m.coordinates(obj).tobytes()).hexdigest(),
           [(name,hashlib.sha256(group_weights(obj,name).tobytes()).hexdigest())
-           for name in ('CM_WrapMask','CM_Inner_Parts','CM_Ears') if obj.vertex_groups.get(name)]) for obj in actors(scene)])
+           for name in sorted(g.name for g in obj.vertex_groups if g.name in {'CM_WrapMask','CM_Inner_Parts','CM_Ears','CM_Neck'}
+                or g.name.startswith('CM_Fit_') or (g.name.startswith('FACIAL_') and '_Ear' in g.name))]) for obj in actors(scene)])
 
 
 def cleanup(job):
-    path=job['folder']/'input.blend'
-    try:path.unlink(missing_ok=True)
-    except OSError:
-        _PENDING_CLEANUP.add(path)
-        if not bpy.app.timers.is_registered(reap):bpy.app.timers.register(reap,first_interval=.5,persistent=True)
+    for relative in ('input.blend','fit/input.blend','fit/fit.npz','fit/fit.tmp.npz'):
+        path=job['folder']/relative
+        try:path.unlink(missing_ok=True)
+        except OSError:
+            _PENDING_CLEANUP.add(path)
+            if not bpy.app.timers.is_registered(reap):bpy.app.timers.register(reap,first_interval=.5,persistent=True)
 
 
 def reap():
@@ -76,6 +90,50 @@ def reap():
         except OSError:continue
         _PENDING_CLEANUP.remove(path)
     return .5 if _PENDING_CLEANUP else None
+
+
+def launch_fit(context,job):
+    global _JOB
+    from . import wrap_fit,process_ref
+    from .detail_jobs import thread_arguments
+    folder=job['folder']/'fit'
+    request=wrap_fit.snapshot(context,folder)
+    request.update(addon_root=str(Path(__file__).resolve().parents[1]),parent=os.getpid())
+    (folder/'request.json').write_text(json.dumps(request))
+    frozen_state=state(context,context.scene)
+    with (folder/'worker.log').open('w',encoding='utf-8') as log:
+        process=subprocess.Popen([bpy.app.binary_path,'--background','--factory-startup',*thread_arguments(),
+            '--python-exit-code','1','--python',str(Path(__file__).with_name('wrap_fit_worker.py')),
+            '--',str(folder)],stdout=log,stderr=subprocess.STDOUT,
+            creationflags=(subprocess.CREATE_NO_WINDOW|subprocess.BELOW_NORMAL_PRIORITY_CLASS) if os.name=='nt' else 0)
+    job.update(process=process,phase='FIT',state=frozen_state,fit_started=time.monotonic())
+    _JOB=job
+    if not bpy.app.timers.is_registered(poll):bpy.app.timers.register(poll,first_interval=.2,persistent=True)
+    try:
+        (job['folder']/'ownership.json').write_text(json.dumps(dict(kind='CREATE_MH_AUTO_WRAP_V1',phase='FIT',
+            parent=process_ref.identify(os.getpid()),worker=process_ref.identify(process.pid))))
+    except OSError as error:
+        job['launch_error']=str(error);cancel();raise
+    context.scene.cm_settings.status='Fitting in the background. Cancel keeps the accepted character; detected points remain available.'
+
+
+def start_fit(context,*,guided=True,defer_wrinkles=False):
+    from . import character_project,landmark_tools
+    from .setup_paths import resolve
+    if running():raise ValueError('Observe or cancel the current wrap request first')
+    s,f=context.scene.cm_settings,context.scene.cm_features
+    m.check_inputs(s);character_project.preflight(context,s,f)
+    if landmark_tools.active():raise ValueError('Finish editing landmark pairs before fitting')
+    resolve(f)
+    window=context.window or next((w for w in context.window_manager.windows if w.scene==context.scene),None)
+    if not window:raise ValueError('Open this character in a Blender window before background fitting')
+    folder=Path(bpy.path.abspath(s.project_dir)).resolve()/'Automation'/'.jobs'/uuid.uuid4().hex[:12]
+    job=dict(scene=context.scene,window=window,folder=folder,wrap=True,guided=guided,
+        defer_wrinkles=defer_wrinkles,cancel=False,started=time.monotonic())
+    try:launch_fit(context,job)
+    except Exception:
+        if _JOB is not job:cleanup(job)
+        raise
 
 
 def start(context,*,wrap):
@@ -146,7 +204,7 @@ def start(context,*,wrap):
         cleanup({'folder':folder})
         raise
     _JOB={'scene':context.scene,'window':window,'folder':folder,'process':process,'state':stamp,
-        'wrap':wrap,'cancel':False,'started':time.monotonic()}
+        'wrap':wrap,'guided':True,'phase':'DETECT','cancel':False,'started':time.monotonic()}
     from . import process_ref
     try:
         (folder/'ownership.json').write_text(json.dumps({'kind':'CREATE_MH_AUTO_WRAP_V1',
@@ -212,7 +270,7 @@ def publish(context,result):
 
 
 def poll():
-    global _JOB
+    global _JOB,_PUBLISHING
     job=_JOB
     if not job:return None
     if job['process'].poll() is None:return .2
@@ -222,15 +280,31 @@ def poll():
     try:
         scene=job.get('scene')
         if job['cancel'] or not scene:
-            status='canceled'
-            if scene:scene.cm_settings.status='Auto Wrap canceled. Previous character and landmarks retained.'
+            status='failed' if job.get('launch_error') else 'canceled';error=job.get('launch_error','')
+            if scene:scene.cm_settings.status=('Surface fit canceled. Accepted character and detected points retained.'
+                if job.get('phase')=='FIT' else 'Auto Wrap canceled. Previous character and landmarks retained.')
         else:
             window=job['window']
             if not window or window.scene!=scene:raise ValueError('Character window changed; detection was not applied')
             with bpy.context.temp_override(window=window):
                 from . import landmark_tools,paint_tools,detail_mask
                 if bpy.context.mode!='OBJECT' or landmark_tools.active() or paint_tools.running() or detail_mask.running(scene) or state(bpy.context,scene)!=job['state']:
-                    raise ValueError('Character inputs changed during detection. Previous character and landmarks retained.')
+                    raise ValueError('Character inputs changed during the wrap request. Accepted character retained.')
+                if job.get('phase')=='FIT':
+                    from . import wrap_fit
+                    payload=wrap_fit.load(job['folder']/'fit')
+                    if job['process'].returncode:raise ValueError('Surface-fit worker exited unsuccessfully')
+                    _PUBLISHING=True
+                    try:
+                        with wrap_fit.prepared(bpy.context,payload):
+                            outcome=(bpy.ops.cm.guided(action='WRAP') if job.get('guided',True)
+                                else bpy.ops.cm.wrap(defer_wrinkles=job.get('defer_wrinkles',False)))
+                            if outcome!={'FINISHED'}:raise ValueError('Could not publish the completed surface fit')
+                    finally:_PUBLISHING=False
+                    if not bpy.app.background and bpy.context.preferences.edit.use_global_undo:
+                        bpy.ops.ed.undo_push(message='Surface fit complete')
+                    status='complete'
+                    return None
                 path=job['folder']/'result.json'
                 result=json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {}
                 if job['process'].returncode or result.get('status')!='complete':
@@ -239,8 +313,9 @@ def poll():
                 if not bpy.app.background and bpy.context.preferences.edit.use_global_undo:
                     bpy.ops.ed.undo_push(message='Auto landmarks detected')
                 if job['wrap'] and not result.get('body_warning'):
-                    if bpy.ops.cm.guided(action='WRAP')!={'FINISHED'}:
-                        raise ValueError('Fit failed. Detected points are retained for manual correction.')
+                    job['detection_worker_pid']=job['process'].pid
+                    launch_fit(bpy.context,job)
+                    return .2
                 else:
                     from .guided import focus
                     s=scene.cm_settings
@@ -259,9 +334,18 @@ def poll():
             job['scene'].cm_settings.status=error
             job['scene'].cm_features.last_action_error=True
     finally:
+        if _JOB is job:return .2
         cleanup(job)
+        recovery=None
+        if status=='complete' and job['wrap'] and job.get('scene'):
+            accepted=job['scene'].cm_settings.result
+            if accepted and accepted.get('cm_wrap_recovery'):
+                recovery=json.loads(accepted['cm_wrap_recovery'])
         (job['folder']/'receipt.json').write_text(json.dumps({'status':status,'error':error,
-            'seconds':time.monotonic()-job['started'],'worker_pid':job['process'].pid}),encoding='utf-8')
+            'seconds':time.monotonic()-job['started'],'worker_pid':job['process'].pid,
+            'detection_worker_pid':job.get('detection_worker_pid'),
+            'fit_worker_pid':job['process'].pid if job.get('phase')=='FIT' else None,
+            'fit_recovery':recovery}),encoding='utf-8')
     return None
 
 
@@ -305,7 +389,8 @@ class CM_OT_cancel_auto_wrap(bpy.types.Operator):
     bl_idname='cm.cancel_auto_wrap'
     bl_label='Cancel Auto Wrap'
     def execute(self,context):
-        cancel();context.scene.cm_settings.status='Canceling Auto Wrap...'
+        message='Canceling Surface Fit...' if fitting() else 'Canceling Auto Wrap...'
+        cancel();context.scene.cm_settings.status=message
         return {'FINISHED'}
 
 

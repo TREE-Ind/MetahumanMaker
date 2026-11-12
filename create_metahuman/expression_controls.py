@@ -1,6 +1,13 @@
 """Named inspection combinations of native controls, evaluated by RigLogic."""
 
 
+def native_curve_key(name):
+    """Match raw, dotted and Unreal curve names using native FName casing."""
+    if not isinstance(name,str) or not name:raise ValueError('Facial control names must be nonempty strings')
+    key=name.lower().replace('.','_')
+    return key if key.startswith('ctrl_expressions_') else 'ctrl_expressions_'+key
+
+
 def lid_capture_poses(raw_controls,mode='LIDS',current=None):
     """Independent, complete native eye grids compatible with calibration APIs."""
     import math
@@ -38,24 +45,37 @@ def lid_capture_poses(raw_controls,mode='LIDS',current=None):
 
 def verify_lid_capture(capture,source_mesh):
     """Verify native identity, isolation and all requested independent controls."""
+    return verify_pose_capture(capture,source_mesh,required_lod=0)
+
+
+def verify_pose_capture(capture,source_mesh,*,required_lod=None):
+    """Verify evaluated controls and the actual requested native LOD per pose."""
     import json,math
     from pathlib import Path
+    if not capture.get('poses'):raise ValueError('Native pose capture is empty')
     for row in capture['poses']:
+        lod=row.get('lod',required_lod)
+        if type(lod) is not int or lod<0 or (required_lod is not None and lod!=required_lod):
+            raise ValueError('Native capture has an invalid requested LOD: '+row['name'])
         meta=json.loads(Path(row['file']).read_text())
         if (meta.get('source_mesh')!=source_mesh or meta.get('dna_mode')!='ASSEMBLED_EMBEDDED'
-                or meta.get('material_instances_isolated') is not True or meta.get('lod')!=0):
-            raise ValueError('Native identity or material isolation did not match eye capture '+row['name'])
+                or meta.get('material_instances_isolated') is not True or type(meta.get('lod')) is not int or meta['lod']!=lod):
+            raise ValueError('Native identity, LOD or material isolation did not match capture '+row['name'])
         curves=meta.get('raw_curves')
         # Native curve exports are sparse: an empty dictionary is a valid
         # evaluated neutral, while missing nonzero requests still fail below.
         if not isinstance(curves,dict):raise ValueError('Eye capture has invalid native control data: '+row['name'])
-        actual={name.lower().replace('.','_'):value for name,value in curves.items() if name.lower().startswith(('ctrl_expressions.','ctrl_expressions_'))}
-        expected={'ctrl_expressions_'+name.removeprefix('CTRL_expressions.').lower():value for name,value in row['controls'].items()}
+        actual={native_curve_key(name):value for name,value in curves.items() if name.lower().startswith(('ctrl_expressions.','ctrl_expressions_'))}
+        expected={native_curve_key(name):value for name,value in row['controls'].items()}
+        if len(expected)!=len(row['controls']) or any(type(value) not in (int,float) or not math.isfinite(value) or not 0<=value<=1 for value in expected.values()):
+            raise ValueError('Native capture has repeated or invalid requested controls: '+row['name'])
+        if 'raw_controls' in meta and not expected.keys()<={native_curve_key(name) for name in meta['raw_controls']}:
+            raise ValueError('Native capture requests unsupported face controls: '+row['name'])
         if any(not isinstance(value,(int,float)) or not math.isfinite(value) for value in actual.values()):
             raise ValueError('Eye capture has invalid evaluated controls: '+row['name'])
-        if any(abs(actual.get(name,float('inf'))-value)>1e-6 for name,value in expected.items()) or any(abs(value-expected.get(name,0.))>1e-6 for name,value in actual.items()):
+        if any(abs(actual.get(name,0.)-value)>1e-6 for name,value in expected.items()) or any(abs(value-expected.get(name,0.))>1e-6 for name,value in actual.items()):
             raise ValueError('Native controls did not match the independent eye sample '+row['name'])
-    capture.update(controls_verified=True,material_isolation_verified=True)
+    capture.update(controls_verified=True,material_isolation_verified=True,lods_verified=True)
     return capture
 
 

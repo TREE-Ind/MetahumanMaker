@@ -8,11 +8,14 @@ import re
 import subprocess
 import uuid
 import bpy
+from bpy.app.handlers import persistent
 import numpy as np
 from mathutils import Matrix, Vector
 
 _JOB = None
 _UPDATE_SUSPENSIONS = 0
+_INSPECTION_VIEWS = {}
+_INSPECTION_FIELDS=('type','light','color_type','single_color','show_shadows','show_cavity','render_pass')
 ENVIRONMENTS = [
     (name + ".exr", name.title(), "Blender studio environment")
     for name in (
@@ -26,6 +29,51 @@ ENVIRONMENTS = [
         "night",
     )
 ]
+
+
+def restore_inspection():
+    for shading,values in list(_INSPECTION_VIEWS.values()):
+        try:
+            for key,value in values.items():setattr(shading,key,value)
+        except ReferenceError:pass  # A closed editor space has no state to restore.
+    _INSPECTION_VIEWS.clear()
+
+
+@persistent
+def _before_load(_):
+    restore_inspection()
+
+
+def register():
+    if _before_load not in bpy.app.handlers.load_pre:bpy.app.handlers.load_pre.append(_before_load)
+
+
+def inspect_update(self, context):
+    """Inspect existing shading channels without editing material nodes/maps."""
+    if _UPDATE_SUSPENSIONS or not context:
+        return
+    if not self.show_lookdev:
+        restore_inspection();return
+    if not context.screen:return
+    for area in context.screen.areas:
+        if area.type != 'VIEW_3D':continue
+        shading=area.spaces.active.shading
+        mode=self.lookdev_inspection
+        key=shading.as_pointer()
+        if mode=='COMBINED':
+            previous=_INSPECTION_VIEWS.pop(key,None)
+            if previous:
+                for name,value in previous[1].items():setattr(shading,name,value)
+        elif key not in _INSPECTION_VIEWS:
+            values={name:(tuple(shading.single_color) if name=='single_color' else getattr(shading,name)) for name in _INSPECTION_FIELDS}
+            _INSPECTION_VIEWS[key]=(shading,values)
+        if mode=='SHAPE':
+            shading.type='SOLID';shading.light='STUDIO'
+            shading.color_type='SINGLE';shading.single_color=(.5,.5,.5)
+            shading.show_shadows=True;shading.show_cavity=False
+        else:
+            shading.type='MATERIAL';shading.render_pass=mode
+        area.tag_redraw()
 
 
 @contextmanager
@@ -61,8 +109,10 @@ def bind_roughness(material, image):
 
 
 def update(self, context):
-    if _UPDATE_SUSPENSIONS or not context or not self.show_lookdev:
+    if _UPDATE_SUSPENSIONS or not context:
         return
+    if not self.show_lookdev:
+        restore_inspection();return
     s = context.scene.cm_settings
     for obj in (s.result, s.detail, self.body_result, self.body_detail, self.wm1, self.wm2, self.wm3):
         if not obj:
@@ -97,6 +147,7 @@ def update(self, context):
             shading.studiolight_background_alpha = 0 if self.lookdev_transparent else 1
             shading.studiolight_background_blur = 0
             area.tag_redraw()
+    inspect_update(self,context)
 
 
 def viewport_area(context):
@@ -471,6 +522,8 @@ def _poll_job():
 
 
 def start_render(context):
+    if context.scene.cm_features.show_lookdev and context.scene.cm_features.lookdev_inspection!='COMBINED':
+        raise ValueError('Switch Inspect to Beauty before rendering a studio preview')
     global _JOB
     if _JOB:
         _poll_job()
@@ -524,7 +577,7 @@ def start_render(context):
 
 
 class CM_OT_preview_render(bpy.types.Operator):
-    """Save the visible left viewport as a PNG while editing remains available"""
+    """Render a studio beauty PNG using the left viewport framing"""
     bl_idname = "cm.preview_render"
     bl_label = "Render Preview"
 
@@ -571,6 +624,9 @@ def draw(layout, context):
     if not f.show_lookdev:
         return
     box = layout.box()
+    box.prop(f,'lookdev_inspection',text='Inspect')
+    if f.lookdev_inspection!='COMBINED':
+        box.label(text='Viewport inspection; materials and maps retained.')
     box.prop(f, "lookdev_skin_controls", toggle=True)
     if f.lookdev_skin_controls:
         box.prop(f, "lookdev_roughness", text="Roughness")
@@ -591,9 +647,11 @@ def draw(layout, context):
         if is_rendering():
             box.operator("cm.cancel_preview", text="Cancel Background Render")
         else:
-            box.operator(
+            row=box.row();row.enabled=f.lookdev_inspection=='COMBINED'
+            row.operator(
                 "cm.preview_render", text="Render Preview", icon="RENDER_STILL"
             )
+            if f.lookdev_inspection!='COMBINED':box.label(text='Switch to Beauty for a studio render.')
         if f.preview_output:
             box.operator(
                 "cm.open_preview", text="Open Saved Preview", icon="IMAGE_DATA"
@@ -605,6 +663,8 @@ CLASSES = (CM_OT_preview_render, CM_OT_cancel_preview, CM_OT_open_preview)
 
 def unregister():
     global _JOB
+    restore_inspection()
+    if _before_load in bpy.app.handlers.load_pre:bpy.app.handlers.load_pre.remove(_before_load)
     if _JOB and _JOB["process"].poll() is None:
         _JOB["process"].terminate()
     if bpy.app.timers.is_registered(_poll_job):

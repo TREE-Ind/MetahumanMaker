@@ -150,6 +150,9 @@ def build(context, s, f):
 
 
 def solve(context, s, f):
+    from . import wrap_fit
+    prepared=wrap_fit.consume(context,s,'JOINT')
+    if prepared is not None:return prepared
     from .guided import signature
     controls = list(s.landmarks)
     for pair in controls:
@@ -160,8 +163,8 @@ def solve(context, s, f):
     if controls:
         if not 3 <= len(controls) <= 512:
             raise ValueError('Use at least three spread landmark pairs across the whole character (maximum 512)')
-        geometry.similarity(np.array([pair.template.matrix_world.translation[:] for pair in controls]),
-            np.array([pair.source.matrix_world.translation[:] for pair in controls]))
+        geometry.similarity(np.array([m.marker_position(pair.template) for pair in controls]),
+            np.array([m.marker_position(pair.source) for pair in controls]))
     proxies = []
     graph = result = None
     source_render = s.source.hide_render
@@ -173,7 +176,9 @@ def solve(context, s, f):
                 marker = bpy.data.objects.new('CM Joint Landmark', None)
                 context.scene.collection.objects.link(marker)
                 marker.parent = graph
-                marker.location = pair.template.matrix_world.translation
+                marker.location = m.marker_position(pair.template)
+                if '_cm_fit_marker_world' in pair.template:
+                    marker['_cm_fit_marker_world']=list(m.marker_position(pair.template))
                 marker.hide_set(True)
                 proxies.append(marker)
                 pairs.append(SimpleNamespace(source=pair.source, template=marker, name=pair.name))
@@ -191,8 +196,8 @@ def solve(context, s, f):
                 height = float(np.ptp(head[:, 2]))
                 neck_top = float(head[hi, 2].max())
                 settings.local_landmarks = (
-                    np.array([pair.template.matrix_world.translation[:] for pair in face_pairs]),
-                    np.array([pair.source.matrix_world.translation[:] for pair in face_pairs]))
+                    np.array([m.marker_position(pair.template) for pair in face_pairs]),
+                    np.array([m.marker_position(pair.source) for pair in face_pairs]))
                 settings.local_landmark_radius = max(height * s.landmark_radius, height * .1)
                 settings.local_landmark_weights = np.clip(
                     (graph_points[:, 2] - neck_top) / max(height * .25, 1e-8), 0, 1)

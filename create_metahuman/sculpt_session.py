@@ -343,6 +343,52 @@ def isolate_assets(scene, folder):
             obj["cm_reference_normal"] = paths[obj["cm_reference_normal"]]
 
 
+def storage_budget(scene, project):
+    """Estimate private scene/maps/assets before saving or making a session.
+
+    No mesh evaluation or image pixel readback: large character sessions must
+    be able to reject a full disk without allocating their snapshots first.
+    """
+    from . import resource_budget
+
+    def tree_bytes(path, ancestors=frozenset()):
+        if not path.exists():
+            return 0
+        if path.is_file():
+            return path.stat().st_size
+        resolved = path.resolve()
+        if resolved in ancestors:
+            raise ValueError('A map folder links back into itself: ' + str(path))
+        return sum(tree_bytes(child, ancestors | {resolved}) for child in path.iterdir())
+
+    map_bytes = sum(tree_bytes(project / name) for name in ('Maps', 'ReferenceMaps'))
+    image_bytes = 0
+    # isolate_assets writes every loaded image in the private author process.
+    # Count dirty images from dimensions instead of trusting an older packed file.
+    for image in bpy.data.images:
+        if image.source not in {'FILE', 'GENERATED', 'TILED'}:
+            continue
+        packed = list(image.packed_files)
+        if packed and not image.is_dirty:
+            image_bytes += sum(item.packed_file.size for item in packed)
+        else:
+            tiles = max(1, len(image.tiles)) if image.source == 'TILED' else 1
+            image_bytes += int(image.size[0]) * int(image.size[1]) * max(4, image.channels) * (4 if image.is_float else 1) * tiles
+    geometry_bytes = resource_budget.meshes(scene.objects)
+    for obj in scene.objects:
+        if obj.type == 'CURVES':
+            geometry_bytes += len(obj.data.points) * 64 + len(obj.data.curves) * 64
+    saved = Path(bpy.data.filepath) if bpy.data.filepath else None
+    saved_bytes = saved.stat().st_size if saved and saved.is_file() else 0
+    scene_bytes = max(saved_bytes, geometry_bytes + image_bytes)
+    # Main save, isolated snapshot and first author save can coexist. External
+    # writable images and map copies are additional to those packed scenes.
+    required = 3 * scene_bytes + image_bytes + map_bytes + 512 * resource_budget.MIB
+    return dict(required_bytes=required, scene_estimate_bytes=scene_bytes,
+                image_estimate_bytes=image_bytes, copied_map_bytes=map_bytes,
+                estimate=True)
+
+
 def start(context, s, f):
     global _SESSION
     from . import bake_jobs, detail_jobs,wrinkle_jobs,map_provenance,sculpt_archive
@@ -370,6 +416,8 @@ def start(context, s, f):
     resource_budget.require('a separate sculpting editor',resource_budget.GIB+
         resource_budget.meshes((s.result,s.detail,f.body_result,f.body_detail,f.wm1,f.wm2,f.wm3)))
     project = Path(bpy.path.abspath(s.project_dir)).resolve()
+    disk = storage_budget(context.scene, project)
+    resource_budget.require_disk('a separate sculpting session', project, disk['required_bytes'])
     folder = project / "DetailSessions" / uuid.uuid4().hex[:12]
     author = folder / "author"
     author.mkdir(parents=True)
@@ -389,6 +437,7 @@ def start(context, s, f):
     }
     manifest = {
         "schema": 1,
+        "storage_budget": disk,
         "session": folder.name,
         "parent": process_ref.identify(os.getpid()),
         "project": str(project),
@@ -417,6 +466,14 @@ def start(context, s, f):
 
 
 def _launch(scene, folder):
+    from . import resource_budget
+    manifest = _manifest(folder)
+    author = Path(manifest['author_project']).parent
+    disk = storage_budget(scene, Path(manifest['project']))
+    # The main save, snapshot and copied maps are already present. Check the
+    # remaining author save and writable textures, also when resuming later.
+    remaining = disk['scene_estimate_bytes'] + disk['image_estimate_bytes'] + 512 * resource_budget.MIB
+    resource_budget.require_disk('opening the sculpting editor', author, remaining)
     # A previous process's ready/error marker cannot describe this launch.
     for name in ("author-ready.json", "startup-error.json"):
         (folder / name).unlink(missing_ok=True)

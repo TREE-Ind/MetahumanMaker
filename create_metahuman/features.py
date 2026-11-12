@@ -370,6 +370,11 @@ class CM_Features(bpy.types.PropertyGroup):
     )
     advanced_ui: BoolProperty(name="Advanced Controls", default=False)
     show_lookdev: BoolProperty(name="LookDev", default=False, update=lookdev.update)
+    lookdev_inspection: EnumProperty(name='Inspect',default='COMBINED',update=lookdev.inspect_update,
+        items=[('COMBINED','Beauty','Show the complete skin material'),
+               ('DIFFUSE_COLOR','Albedo','Inspect diffuse base color without lighting; photo lighting baked into color remains'),
+               ('SHAPE','Shape','Inspect solid geometry without skin texture or material normal detail'),
+               ('NORMAL','Surface Normals','Inspect the shaded normals, including material normal detail')])
     lookdev_skin_controls: BoolProperty(name="Skin Shader",default=False)
     lookdev_environment_controls: BoolProperty(name="Environment",default=False)
     lookdev_render_controls: BoolProperty(name="Render",default=True)
@@ -479,6 +484,22 @@ class CM_Features(bpy.types.PropertyGroup):
     eye_native_tint: FloatVectorProperty(name='Iris Tint',subtype='COLOR',size=3,min=0,max=1,default=(.65,.7,.75))
     eye_native_saturation: FloatProperty(name='Iris Saturation',min=0,max=4,default=0)
     eye_native_size: FloatProperty(name='Iris Size',min=.145,max=.185,default=.165,precision=3)
+    eye_native_pupil_enabled: BoolProperty(name='Override Pupil Dilation',default=False)
+    eye_native_pupil: FloatProperty(name='Pupil Dilation',min=.85,max=1.2,default=.95,precision=3)
+    eye_native_lightness_enabled: BoolProperty(name='Override Iris Lightness',default=False)
+    eye_native_lightness: FloatProperty(name='Iris Lightness',min=0,max=1,default=.56)
+    eye_native_palette_enabled: BoolProperty(name='Override Iris Palette',default=False,
+        description='Override native primary/secondary palette coordinates and blending; these are Creator palette positions, not RGB or HSV values')
+    eye_native_primary_hue: FloatProperty(name='Primary Palette Hue',min=0,max=1,default=.5)
+    eye_native_secondary_hue: FloatProperty(name='Secondary Palette Hue',min=0,max=1,default=.5)
+    eye_native_secondary_value: FloatProperty(name='Secondary Lightness',min=0,max=1,default=.5)
+    eye_native_color_blend: FloatProperty(name='Color Blend',min=0,max=1,default=.5)
+    eye_native_blend_softness: FloatProperty(name='Blend Softness',min=0,max=1,default=.5)
+    eye_native_details_enabled: BoolProperty(name='Override Iris Details',default=False)
+    eye_native_rotation: FloatProperty(name='Iris Rotation',min=0,max=1,default=0)
+    eye_native_shadow_details: FloatProperty(name='Shadow Detail',min=0,max=1,default=.5)
+    eye_native_limbal_size: FloatProperty(name='Limbal Ring Size',min=.6,max=.85,default=.725)
+    eye_native_limbal_softness: FloatProperty(name='Limbal Ring Softness',min=.02,max=.15,default=.085)
     teeth: PointerProperty(name="Teeth", type=bpy.types.Object)
     full_head: BoolProperty(name="Include Eyes and Teeth", default=True)
     wrap_method: EnumProperty(
@@ -497,10 +518,14 @@ class CM_Features(bpy.types.PropertyGroup):
             ("ACCURATE", "Accurate", "More refinement iterations"),
         ],
     )
-    conservative: BoolProperty(name="Conservative Wrap")
+    conservative: BoolProperty(name="Conservative Wrap",
+        description="Reduce projection distance and protect recognized inner parts on noisy or incomplete sources; review likeness afterward")
     preserve_mouth_interior: BoolProperty(name="Preserve Mouth Interior", default=True,
         description="Keep recognized oral cavity UV islands behind the lips while fitting the outer skin")
-    is_mask: BoolProperty(name="Frontal Face Mask")
+    retain_generated_ear_detail: BoolProperty(name="Retain Native Ear Detail", default=True,
+        description="For generated face sources, retain native ear folds while matching the generated ear size and placement")
+    is_mask: BoolProperty(name="Frontal Face Mask",
+        description="Fit the front while retaining the back of the template for partial scans; a painted wrap mask takes priority")
     decimate_ratio: FloatProperty(name="Proxy Ratio", default=0.25, min=0.01, max=1)
     front_axis: EnumProperty(
         name="Front Axis",
@@ -736,9 +761,11 @@ class CM_Features(bpy.types.PropertyGroup):
     photo_color_settings: BoolProperty(name='Photo Color Settings',default=False)
     photo_base_skin_settings: BoolProperty(name='Base Skin',default=False,
         description='Choose matching head and body skin before projecting photo color')
-    photo_color_size: EnumProperty(name='Photo Color Size',items=[('1024','1K',''),('2048','2K','')],default='2048')
+    photo_color_size: EnumProperty(name='Photo Color Size',items=[('1024','1K',''),('2048','2K',''),('4096','4K','Preserve available reference detail; requires more memory')],default='2048')
     photo_color_strength: FloatProperty(name='Photo Color Strength',default=1,min=.01,max=1)
     photo_match_skin: BoolProperty(name='Match Existing Skin Tone',default=True)
+    photo_repair_hair: BoolProperty(name='Repair Hair on Skin',default=False,
+        description='Infer local skin color beneath detected hair strands using nearby photo skin')
     photo_blend_neck: BoolProperty(name='Blend Neck to Body',default=True,
         description='Match the attached lower neck to the body while protecting projected face color')
     generated_head_height: FloatProperty(
@@ -1120,18 +1147,11 @@ class CM_OT_custom_body(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         s, f = context.scene.cm_settings, context.scene.cm_features
         try:
-            obj = f.body_result or s.result
-            m.check_mesh(obj, "Body")
-            with m.selection_state(context):
-                m.activate(context, obj)
-                bpy.ops.wm.obj_export(
-                    filepath=self.filepath,
-                    export_selected_objects=True,
-                    export_materials=False,
-                )
-            native_body.save_custom_state(obj,self.filepath)
+            from .body_library import save_custom_body
+            save_custom_body(context,s,f,self.filepath)
             return {"FINISHED"}
         except Exception as exc:
+            s.status = str(exc)
             self.report({"ERROR"}, str(exc))
             return {"CANCELLED"}
 
@@ -1295,6 +1315,8 @@ class CM_PT_advanced(Panel, bpy.types.Panel):
         button(l, "Detect Landmarks Locally", "AUTO")
         l.prop(f, "conservative")
         l.prop(f, "preserve_mouth_interior")
+        if context.scene.cm_settings.source and context.scene.cm_settings.source.get('cm_gnm'):
+            l.prop(f, "retain_generated_ear_detail")
         l.prop(f, "is_mask")
         l.prop(f, "decimate_ratio")
         button(l, "Create Solver Proxy", "DECIMATE")
@@ -1541,6 +1563,7 @@ def register():
     for cls in CLASSES:
         bpy.utils.register_class(cls)
     bpy.types.Scene.cm_features = PointerProperty(type=CM_Features)
+    lookdev.register()
     from . import skin_brushes
     skin_brushes.register()
     detail_mask.register()

@@ -1,11 +1,12 @@
 """Reversible camera-matched photo overlay for an accepted fitted GNM source."""
 
 import json
+import hashlib
 
 import bpy
 import numpy as np
 from bpy.app.handlers import persistent
-from bpy.props import EnumProperty
+from bpy.props import EnumProperty, IntProperty
 from mathutils import Matrix
 
 from . import head_model, photo_fit_core
@@ -13,11 +14,32 @@ from . import head_model, photo_fit_core
 _VIEW = None
 
 
-def camera_for(context, source):
+def reference_for(source, slot=-1):
+    """Resolve a fitted reference by slot and bytes, never by a reused filename."""
     report = json.loads(source.get('cm_photo_fit_report', '{}'))
     image = source.get('cm_photo_reference')
     if not image or 'camera' not in report:
         raise ValueError('Create a photo-fitted source before opening its overlay')
+    if slot == -1:
+        return image, report
+    from . import photo_color
+    image = dict(photo_color.supporting_photos(source)).get(slot)
+    if not image:
+        raise ValueError('This supporting reference is no longer in the project')
+    digest = hashlib.sha256(photo_color.packed_photo(image)).hexdigest()
+    record = next((row for row in report.get('views', [])
+                   if row.get('slot') == slot and row.get('reference_sha256') == digest), None)
+    if not record:
+        raise ValueError('Refine Shape from Supporting Photos again to calibrate this reference overlay')
+    values = np.asarray(record.get('camera'), dtype=float)
+    if values.shape != (6,) or not np.isfinite(values).all():
+        raise ValueError('The supporting reference camera is invalid; refine it again')
+    return image, dict(report, camera=values.tolist(), width=record['width'], height=record['height'],
+                       review_reference=image.name, review_generated=bool(record.get('generated')))
+
+
+def camera_for(context, source, slot=-1):
+    image, report = reference_for(source, slot)
     f = context.scene.cm_features
     model = head_model.load_model(f.model_dir)
     skin = model['vertex_groups'][list(map(str, model['vertex_group_names'])).index('skin')] > .5
@@ -94,7 +116,20 @@ def show_target(context, target):
     state['target'] = target
 
 
-def start(context, target='SOURCE'):
+def show_reference(context, slot):
+    state = _VIEW
+    if not state or context.scene != state['scene'] or context.view_layer != state['layer']:
+        raise ValueError('Return to the photo review scene before switching its reference')
+    camera, report = camera_for(context, state['source'], slot)
+    context.scene.render.resolution_x = report['width']
+    context.scene.render.resolution_y = report['height']
+    state['reference_slot'] = slot
+    state['space'].region_3d.view_perspective = 'CAMERA'
+    state['space'].region_3d.view_camera_zoom = 0
+    state['space'].region_3d.view_camera_offset = (0, 0)
+
+
+def start(context, target='SOURCE', slot=-1):
     global _VIEW
     if _VIEW:
         finish()
@@ -107,10 +142,11 @@ def start(context, target='SOURCE'):
                key=lambda a: a.width * a.height, default=None)
     if not area:
         raise ValueError('Open a 3D View to compare the fitted source')
-    camera, report = camera_for(context, source)
+    camera, report = camera_for(context, source, slot)
     space, render = area.spaces.active, context.scene.render
     region = space.region_3d
     _VIEW = {'scene': context.scene, 'space': space, 'source': source, 'layer': context.view_layer,
+             'reference_slot': slot,
              'render': tuple(getattr(render, key) for key in ('resolution_x', 'resolution_y',
                        'resolution_percentage', 'pixel_aspect_x', 'pixel_aspect_y')),
              'camera': space.camera, 'local_camera': space.use_local_camera, 'review_camera': camera,
@@ -207,15 +243,19 @@ class CM_OT_photo_review(bpy.types.Operator):
                                 ('SOURCE', 'Generated Source', ''),
                                 ('RESULT', 'Accepted MetaHuman', ''),
                                 ('CLOSE', 'Return to 3D', '')], default='AUTO')
+    reference_slot: IntProperty(default=-2, min=-2, max=3, options={'HIDDEN'})
 
     def execute(self, context):
         try:
             if self.target == 'CLOSE' or (self.target == 'AUTO' and _VIEW):
                 finish()
             elif _VIEW:
+                if self.reference_slot >= -1:
+                    show_reference(context, self.reference_slot)
                 show_target(context, self.target)
             else:
-                start(context, 'SOURCE' if self.target == 'AUTO' else self.target)
+                start(context, 'SOURCE' if self.target == 'AUTO' else self.target,
+                      max(-1, self.reference_slot))
             return {'FINISHED'}
         except Exception as exc:  # noqa: BLE001 - report failures at the Blender operator boundary.
             self.report({'ERROR'}, str(exc))
@@ -232,6 +272,18 @@ def draw(layout, context):
         return False
     box = layout.box()
     box.label(text='Compare with Reference Photo')
+    try:
+        from . import photo_color
+        guide = json.loads(source.get('cm_photo_fit_report', '{}')).get('eye_guidance', {})
+        if guide and guide.get('reference_sha256') == hashlib.sha256(photo_color.packed_photo(source['cm_photo_reference'])).hexdigest():
+            for side, label in (('image_left', 'Photo left iris'), ('image_right', 'Photo right iris')):
+                eye = guide.get('eyes', {}).get(side, {})
+                if eye.get('status') == 'observed':
+                    box.label(text=label + ': ' + eye['hex'])
+            if guide.get('status') == 'observed':
+                box.label(text='Observed photo color; tune eyes in target lighting.')
+    except (ValueError, KeyError, TypeError):
+        pass
     state = _VIEW if _VIEW and _VIEW['scene'] == context.scene else None
     row = box.row(align=True)
     for target, label in (('SOURCE', 'Source'), ('RESULT', 'MetaHuman')):
@@ -240,11 +292,43 @@ def draw(layout, context):
         button.operator('cm.photo_overlay', text=label,
                         depress=bool(state and state['target'] == target)).target = target
     if state:
+        from . import photo_color
+        row = box.row(align=True)
+        op = row.operator('cm.photo_overlay', text='Primary Photo',
+                          depress=state['reference_slot'] == -1)
+        op.target, op.reference_slot = state['target'], -1
+        for slot, image in photo_color.supporting_photos(source):
+            row = box.row(align=True)
+            label = image.name + (' (generated)' if image.get('cm_photo_generated_reference') else '')
+            op = row.operator('cm.photo_overlay', text=label, depress=state['reference_slot'] == slot)
+            op.target, op.reference_slot = state['target'], slot
         camera = state['review_camera']
         if camera and camera.data.background_images:
             box.prop(camera.data.background_images[0], 'alpha', text='Photo Opacity')
         box.operator('cm.photo_overlay', text='Return to 3D', icon='LOOP_BACK').target = 'CLOSE'
-    elif context.scene.cm_settings.result:
+    else:
+        from . import photo_color
+        photos = photo_color.supporting_photos(source)
+        try:
+            reports = json.loads(source.get('cm_photo_last_view_report', '[]'))
+        except ValueError:
+            reports = []
+        if photos:
+            for index, image in photos:
+                row = box.row(align=True)
+                label = image.name + (' (generated)' if image.get('cm_photo_generated_reference') else '')
+                row.label(text=label, icon='IMAGE_DATA')
+                row.operator('cm.remove_supporting_photo', text='', icon='X').slot = index
+                report = next((report for report in reports
+                               if report.get('slot') == index and report.get('name') == image.name), None)
+                if report and report.get('status') == 'rejected':
+                    box.label(text=report.get('reason', 'View was not used'), icon='ERROR')
+        if len(photos) < photo_color.SUPPORT_LIMIT:
+            box.operator('cm.add_supporting_photo', icon='ADD')
+        if photos:
+            box.operator('cm.refine_photo_views', icon='MOD_MESHDEFORM')
+        if not context.scene.cm_settings.result:
+            return False
         if context.scene.cm_settings.part == 'FULL_BODY' and f.body_result:
             box.prop(f, 'photo_base_skin_settings', text='Base Skin',
                      icon='TRIA_DOWN' if f.photo_base_skin_settings else 'TRIA_RIGHT', emboss=False)
@@ -259,12 +343,14 @@ def draw(layout, context):
         operator.resolution=f.photo_color_size
         operator.strength=f.photo_color_strength
         operator.match_skin=f.photo_match_skin
+        operator.repair_hair=f.photo_repair_hair
         operator.blend_neck=f.photo_blend_neck
         row.prop(f,'photo_color_settings',text='',icon='PREFERENCES',toggle=True)
         if f.photo_color_settings:
             box.prop(f,'photo_color_size',text='Size')
             box.prop(f,'photo_color_strength',text='Strength')
             box.prop(f,'photo_match_skin')
+            box.prop(f,'photo_repair_hair')
             if context.scene.cm_settings.part == 'FULL_BODY' and f.photo_match_skin:
                 box.prop(f,'photo_blend_neck')
     return bool(state)

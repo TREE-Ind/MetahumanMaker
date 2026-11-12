@@ -14,6 +14,8 @@ Use **Create Demo** if you want to learn the panel before bringing in licensed r
 
 Review scale, facing direction, limb pose and landmark pairs. Run the guided wrap, then compare source and result before accepting the fit. For a dense source, use **Large Source / Solver Proxy**: the proxy drives fitting while the original remains available for textures and detail projection.
 
+The Wrap step also exposes **Conservative Fit** for noisy or incomplete sources and **Front Face Only** for partial heads. Conservative fitting can soften likeness. For a frontal shell, check the template's facing direction; Manual mode exposes **Faces** beside this option. These use the existing solver protections and keep saved settings intact.
+
 Always inspect **front, profile and back**. Pay particular attention to the eye sockets, ear attachments, mouth, neck, hands and feet. A good front silhouette alone is not acceptance.
 
 ## 3. Refine the character

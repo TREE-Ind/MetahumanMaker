@@ -6,6 +6,8 @@ class USkeletalMesh;
 class UAnimSequence;
 class UAnimInstance;
 class USkeletalMeshComponent;
+class ULODSyncComponent;
+class AActor;
 
 /** Local face evaluation and explicit, private preview-clip preparation. */
 UCLASS()
@@ -41,6 +43,27 @@ public:
     /** Restore a captured component's playback settings without saving assets. */
     UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
     static bool RestoreComponentPreviewState(USkeletalMeshComponent* Component, const FString& StateJSON);
+
+    /** Evaluate an editor component immediately, including face post-processing,
+     * when the viewport is paused or not ticking. Never saves assets. */
+    UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
+    static bool RefreshEditorPreviewPose(USkeletalMeshComponent* Component);
+
+    /** Read/restore independent render and streaming LOD requests, including grooms. */
+    UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
+    static FString CaptureEditorLODState(AActor* Actor);
+    UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
+    static bool RestoreEditorLODState(AActor* Actor, const FString& StateJSON);
+    /** Advance the native component mappings and LOD streaming requests in an editor view. */
+    UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
+    static bool RefreshEditorLODSync(ULODSyncComponent* Component, int32 ForcedLOD=-2, bool bUpdate=true);
+
+    /** Scoped realtime rendering for the active editor viewport. Does not change
+     * the user's saved realtime preference. Release the returned JSON token. */
+    UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
+    static FString BeginEditorViewportRefresh();
+    UFUNCTION(BlueprintCallable, Category="Create MetaHuman")
+    static FString EndEditorViewportRefresh(const FString& Token);
 
     /** Request: {poses:[{name:string,controls:{rawControlName:0..1}}]}; empty poses inspect DNA only. */
     UFUNCTION(BlueprintCallable, Category="Create MetaHuman")

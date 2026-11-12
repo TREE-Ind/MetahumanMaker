@@ -131,8 +131,22 @@ class CM_OT_eye_appearance(bpy.types.Operator):
 
 def creator_options(features):
     from .unreal_import import eye_options
-    return eye_options(dict(global_tint=list(features.eye_native_tint),
-        global_saturation=features.eye_native_saturation,cornea_size=features.eye_native_size))
+    value=dict(global_tint=list(features.eye_native_tint),
+        global_saturation=features.eye_native_saturation,cornea_size=features.eye_native_size)
+    if features.eye_native_pupil_enabled:value['pupil_dilation']=features.eye_native_pupil
+    if features.eye_native_lightness_enabled:value['primary_color_value']=features.eye_native_lightness
+    if features.eye_native_palette_enabled:
+        value.update(primary_color_hue=features.eye_native_primary_hue,
+                     secondary_color_hue=features.eye_native_secondary_hue,
+                     secondary_color_value=features.eye_native_secondary_value,
+                     iris_color_blend=features.eye_native_color_blend,
+                     iris_blend_softness=features.eye_native_blend_softness)
+    if features.eye_native_details_enabled:
+        value.update(iris_rotation=features.eye_native_rotation,
+                     iris_shadow_details=features.eye_native_shadow_details,
+                     limbal_ring_size=features.eye_native_limbal_size,
+                     limbal_ring_softness=features.eye_native_limbal_softness)
+    return eye_options(value)
 
 
 class CM_OT_creator_eyes(bpy.types.Operator):
@@ -191,6 +205,18 @@ def draw(layout, context):
             controls.prop(f,'eye_native_tint')
             controls.prop(f,'eye_native_saturation')
             controls.prop(f,'eye_native_size')
+            controls.prop(f,'eye_native_pupil_enabled')
+            if f.eye_native_pupil_enabled:controls.prop(f,'eye_native_pupil')
+            controls.prop(f,'eye_native_lightness_enabled')
+            if f.eye_native_lightness_enabled:controls.prop(f,'eye_native_lightness')
+            controls.prop(f,'eye_native_palette_enabled')
+            if f.eye_native_palette_enabled:
+                for name in ('primary_hue','secondary_hue','secondary_value','color_blend','blend_softness'):
+                    controls.prop(f,'eye_native_'+name)
+            controls.prop(f,'eye_native_details_enabled')
+            if f.eye_native_details_enabled:
+                for name in ('rotation','shadow_details','limbal_size','limbal_softness'):
+                    controls.prop(f,'eye_native_'+name)
             controls.label(text='Included with new Creator deliveries.')
             from . import unreal_jobs
             row=native.row();row.enabled=bool(f.unreal_character) and not unreal_jobs.running()

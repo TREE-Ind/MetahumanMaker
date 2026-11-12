@@ -98,6 +98,11 @@ def inventory(root):
     public_readme=root/'release/README.md'
     add(public_readme if public_readme.is_file() else root/'README.md','README.md')
     add(root/'tests/native_assembly_memory.py')
+    add(root/'tests/photo_multiview.py')
+    add(root/'tests/photo_eyes.py')
+    add(root/'tests/photo_visibility.py')
+    add(root/'tests/groom_group_mapping.py')
+    add(root/'tests/groom_lod_warp.py')
     for name in ('marigold','texture-editor','pisa-sr'):add(root/'release/models'/(name+'.json'))
     for name in TOOLS:add(root/'tools'/name)
     plugin=root/'plugins/CreateMetaHumanBridge'

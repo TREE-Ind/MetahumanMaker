@@ -5,8 +5,8 @@
   "license": "MIT",
   "text_normalization": "LF for public text; vendored viewer bytes retained",
   "scope": "Original project code; separately licensed dependencies retain their notices",
-  "file_count": 448,
-  "total_bytes": 8815100,
+  "file_count": 463,
+  "total_bytes": 9474262,
   "files": {
     ".editorconfig": {
       "bytes": 265,
@@ -33,12 +33,12 @@
       "sha256": "847dbe7ea008deb6ab2250acd6fd7a89285081b1bef26a399db5ffc8e4b73359"
     },
     ".github/workflows/source-checks.yml": {
-      "bytes": 661,
-      "sha256": "4ef85e6ef755885c05badf8a9581ee5af83064f16be1f58f8d56246d9d1ec641"
+      "bytes": 947,
+      "sha256": "a3290794dc68b81e4349c6db87e41b6f30e94c63c0348b69887b8da0d96bc3a7"
     },
     ".gitignore": {
-      "bytes": 1827,
-      "sha256": "c8349a197964d92f5ca7f1575beb16083a67c87f6f1440efa7dd9275a45aa030"
+      "bytes": 1961,
+      "sha256": "e5485bddae37ce124196275d110572a3cbfe6c79d26a0b87a2b381751f3c4252"
     },
     "CODE_OF_CONDUCT.md": {
       "bytes": 747,
@@ -53,8 +53,8 @@
       "sha256": "02a95a3370ebd254be2d65d36897d4070b31d16a5b6cc18a67f2503fd0520b01"
     },
     "README.md": {
-      "bytes": 10446,
-      "sha256": "bf35b4efc7056a6c4c919c4dd4f857fece2745a98245f7fdfba183f175d610a5"
+      "bytes": 10896,
+      "sha256": "b1cda073432255c65fcada0e01fecb70c5800a20ccc9be29e650ea83fcd6019a"
     },
     "SECURITY.md": {
       "bytes": 1128,
@@ -73,8 +73,8 @@
       "sha256": "2660e472de9d3c269bdaab70535a8c9e4711b74771978d934a4d07983d48fe84"
     },
     "create_metahuman/__init__.py": {
-      "bytes": 41159,
-      "sha256": "af9a8c0374d322c72b48ad711fde44bd4b6b0cd1e1ea1bf525f5318eefac460f"
+      "bytes": 41696,
+      "sha256": "8dacdffa3fe285d660fcaef0d6ba0a73dc6b00654038dd1dfa4468479dde2a1a"
     },
     "create_metahuman/accurate_surface.py": {
       "bytes": 12807,
@@ -101,8 +101,8 @@
       "sha256": "36cefa10bc77691a2e61d57b2a0c68681d7320bfdc34292d525b7e0824c2ed1b"
     },
     "create_metahuman/auto_wrap_jobs.py": {
-      "bytes": 16896,
-      "sha256": "6ee97f4aa1745b9ab64f95b87b2a04f762d3f467b9b0c890786e247111172bdd"
+      "bytes": 22118,
+      "sha256": "19445470dcf031b7d74d86e31313c11bbfaf22b2581748102f4d2d4c8f881e8e"
     },
     "create_metahuman/auto_wrap_worker.py": {
       "bytes": 2147,
@@ -141,8 +141,8 @@
       "sha256": "53e33ad719660f0fd6442af8cfce9d544cbd69c71cb8e7404aaf685d3b8c51bc"
     },
     "create_metahuman/body_library.py": {
-      "bytes": 4696,
-      "sha256": "59dfbd3f8cb58ffcbaa7cfe7e07c803effbf0f1ea4a668af2d20d593cff7f5ac"
+      "bytes": 8048,
+      "sha256": "eebb4721ad161e7a0125e58ad4954db7abc739f5ec60c379debb8c8c832a0e8b"
     },
     "create_metahuman/body_pose.py": {
       "bytes": 23336,
@@ -181,8 +181,8 @@
       "sha256": "091ca023a5714253ed26a3cff2c48de049fc402046dd6ee8904d080805643203"
     },
     "create_metahuman/character_project.py": {
-      "bytes": 11390,
-      "sha256": "e81dc4c5beb63fc0cb535e85e6aa82348275b7084100040ece2f100d11d43b74"
+      "bytes": 11434,
+      "sha256": "bca7bfc648a5bdb4159d15ccea9851f5e7349404d7709d2a5fcaefa3763d605c"
     },
     "create_metahuman/character_skin.py": {
       "bytes": 18179,
@@ -225,8 +225,8 @@
       "sha256": "b4a3b8b87051ddccb71002f88d2c021a2bd145428c738a4c8544328861e30974"
     },
     "create_metahuman/detail_jobs.py": {
-      "bytes": 24690,
-      "sha256": "58999e34b02b1574c2d95b39bae0c7cfc0a0e9597eacb4bc34031702470110cd"
+      "bytes": 25506,
+      "sha256": "4c5b692cf6d7bc52dd3a84834d73d898ccbd58dbe191c7010b995795bf7e65bd"
     },
     "create_metahuman/detail_layers.py": {
       "bytes": 15144,
@@ -265,8 +265,8 @@
       "sha256": "71b92a06f686aa0ad492932369d9d43274a98a8f14ffb01848058d53bace1e76"
     },
     "create_metahuman/expression_controls.py": {
-      "bytes": 5999,
-      "sha256": "a1a124ed4b15abf7eca6000e05e2d0ec53e3605cd9b8daa9a18c7eac47dd9b8d"
+      "bytes": 7336,
+      "sha256": "c0f787443662fd69f21c3275281bff973a0ee4ae2044d56459ee2efb8d467488"
     },
     "create_metahuman/expression_maps.py": {
       "bytes": 10566,
@@ -281,8 +281,8 @@
       "sha256": "0a2423892b84ab7b8a54423f3ddff725e22329edb0f465c2ee3750cd192bc0f2"
     },
     "create_metahuman/eye_appearance.py": {
-      "bytes": 10675,
-      "sha256": "bc1a4e1a0ad5dc559c78180dd38bcfba7d1bdb1819a17ee4d9b34c12f7b99414"
+      "bytes": 12441,
+      "sha256": "2064391de9615f31de7adf0b455a860030701efa1bbfe54b1630ba24d657abf4"
     },
     "create_metahuman/eye_color_core.py": {
       "bytes": 13083,
@@ -305,8 +305,8 @@
       "sha256": "fddf7a826e76a3443b12917663f9f4a98e4514d99723dcb8a1017d87044475a4"
     },
     "create_metahuman/features.py": {
-      "bytes": 87707,
-      "sha256": "ee4857c4765a5d2cc243fe2efd5daeda667a7b4fe37c5750b56d89c3830b69e1"
+      "bytes": 90395,
+      "sha256": "6fe12d037c426deaed85465baf07d9654d77e323dcad3656716aa59fa7af07a2"
     },
     "create_metahuman/following_source_field.py": {
       "bytes": 11675,
@@ -332,17 +332,29 @@
       "bytes": 4108,
       "sha256": "9ff497a03e843aa2a2f58f3c5a102ec4ea29eee8be35edb3a991dff6203af290"
     },
+    "create_metahuman/groom_clearance.py": {
+      "bytes": 21983,
+      "sha256": "cce0b7cdea73a9eb7f718e66670a7113279de743befee06de83c361d1dcec05d"
+    },
+    "create_metahuman/groom_clearance_core.py": {
+      "bytes": 11730,
+      "sha256": "9f45ce406272c9912e89aca7308998e2ae15f52fb78cca0e450ccf4d50ae9e2d"
+    },
     "create_metahuman/groom_follow.py": {
       "bytes": 7919,
       "sha256": "8953d8f721bfd69c81d85ae17f8461f652978306d949bc4721d242e6f6f14eb6"
     },
     "create_metahuman/groom_jobs.py": {
-      "bytes": 20723,
-      "sha256": "916e172dc0d5b4ff08acb37cbdc8fc8ca2ab9d18d310003afc3d481360a6a057"
+      "bytes": 33185,
+      "sha256": "fc53b596fc8716564dbb2e0437cf04dd240966e5459feea985e05d2011ba8563"
     },
     "create_metahuman/groom_lid_fit.py": {
       "bytes": 5128,
       "sha256": "cefb5d5a1afe3e80149c929cebf97cde5bebf82cf79139824e2d9138c2a49566"
+    },
+    "create_metahuman/groom_lod_warp.py": {
+      "bytes": 17725,
+      "sha256": "e08b6acbd907d8dc159b3f418eb597fe1e42dc2e956f032368dfeb362e2f3bf2"
     },
     "create_metahuman/groom_regions.py": {
       "bytes": 3428,
@@ -353,12 +365,12 @@
       "sha256": "0761def7cb8d652ef15ec8f49f7b7efc36d74a05a7097aab6277c100ea3d99c9"
     },
     "create_metahuman/grooming.py": {
-      "bytes": 53327,
-      "sha256": "2e9f3b9dd158c2e4069226412521148fc933ccbbd5c76d96bbb19aa1bd3df984"
+      "bytes": 75621,
+      "sha256": "39c1245ef2fb10eef6c1d85c7f3c978623f3f5a45a64e338dfc545d46b57f93f"
     },
     "create_metahuman/guided.py": {
-      "bytes": 105494,
-      "sha256": "5481bb2844b2b8ae83fa39b27ec2386eaff62f64b90562f1bcb86f9e97c3f367"
+      "bytes": 107256,
+      "sha256": "7f776e09cd8bb9626bb6fb65ef3932ec36f0ddd566f787c41e3e87f9668a4c5e"
     },
     "create_metahuman/head_model.py": {
       "bytes": 18340,
@@ -381,8 +393,8 @@
       "sha256": "2f15cf70182cab4325005723aad0be4ee4e289c57739fcf25f96fdea6f4a7152"
     },
     "create_metahuman/joint_wrap.py": {
-      "bytes": 17095,
-      "sha256": "f11f31c5db67325de1baff64d51d0e611f448f625844612e69ff7709b6ecc165"
+      "bytes": 17323,
+      "sha256": "b40d3c5596f3c421ee371a2367f8f09895ac854ea2aef751bbcf702438261245"
     },
     "create_metahuman/landmark_flow.py": {
       "bytes": 3495,
@@ -425,16 +437,16 @@
       "sha256": "bd3ead29f67cab0885ba0c36fc058273ee747f900500e7ae6218884f67ba0c71"
     },
     "create_metahuman/lookdev.py": {
-      "bytes": 24893,
-      "sha256": "e350d5df6caf33be25c8ed530c5327f90cf820540151218dc4f47f9ec809ee3c"
+      "bytes": 27459,
+      "sha256": "9c2e3f2a12603f38a94d16e33050d76c6ecd36471f3b1ec747d8b56344f341a8"
     },
     "create_metahuman/map_provenance.py": {
       "bytes": 25965,
       "sha256": "a338ef44071789f50cf4b0e4d8a795467e1dfe921e811b7946ef1a299238173e"
     },
     "create_metahuman/mesh_ops.py": {
-      "bytes": 59706,
-      "sha256": "dd0bc6849e0caed3bc7bf3563ef6d99fc77b43f74b2b5f945ddfa00d942cbf21"
+      "bytes": 68005,
+      "sha256": "ff8638febddddba7991b494ee0e4812873b34e714af486d943eff10b92fb338a"
     },
     "create_metahuman/motion_contact.py": {
       "bytes": 5519,
@@ -493,8 +505,8 @@
       "sha256": "1740c38ebc2956837d47204b219dce7acffce9743bed6accf1b8c97cddbfab82"
     },
     "create_metahuman/native_face_review.py": {
-      "bytes": 40776,
-      "sha256": "7b0053c398e727ea34ddab11eb4da5cb28bb1edac233861805080e0b688feb24"
+      "bytes": 42475,
+      "sha256": "91d2dc2f035d46c857261eadf1d05dcb63fc07c39d7d904aa7e55ecaf02eebd8"
     },
     "create_metahuman/native_fit_step.py": {
       "bytes": 3615,
@@ -701,44 +713,48 @@
       "sha256": "65156ca552b64e1a555d949b730be1c570f67c4909a656fa960b5f83eb98f232"
     },
     "create_metahuman/paint_session.py": {
-      "bytes": 23903,
-      "sha256": "d76c324b0cd940719d913b1554ba32ef9b2e80d368eba5d4495fefd1a6b8a6a4"
+      "bytes": 29502,
+      "sha256": "02091c6f0b2e2f72686a72c20934fa55dd0c125cb6f767c42bf06fd2c4c4c560"
     },
     "create_metahuman/paint_tools.py": {
-      "bytes": 13040,
-      "sha256": "a311ffff42d3d3d35df1cbecb182a86e9e66a55cfd706813b19f279c688d936a"
+      "bytes": 13350,
+      "sha256": "2decbd43f145f0c4783c383757ced39da4c3c5fc55f2a48d29318869c01f1233"
     },
     "create_metahuman/partial_surface_fit.py": {
       "bytes": 43640,
       "sha256": "a62215533e03d410cc249de7a8db454d17709c8c3cd3e3d52bf50efc8e0f795d"
     },
     "create_metahuman/photo_color.py": {
-      "bytes": 16885,
-      "sha256": "57c366fc6e4f50a2b1abdc3d59cf13d6e2de5cbf38aa9185ce10c192ec66cabf"
+      "bytes": 31358,
+      "sha256": "a8a85d66133919345c4410ce16f2a920c8cc50085c08ed9d0e613c67ff94dfa6"
     },
     "create_metahuman/photo_color_core.py": {
-      "bytes": 4204,
-      "sha256": "b07fea985928dcddf31814546c89df47e4ef70fd1dc9001d970ce4dd7fd4843c"
+      "bytes": 25746,
+      "sha256": "0c0b5b86b1af046248eabd36de2be12f3fbdf3fdd5c7ea5ed905c18f950eba71"
     },
     "create_metahuman/photo_color_worker.py": {
-      "bytes": 5856,
-      "sha256": "3bd1e3f19d03c0bc02c5956344c3f6dc2e0a4d2253ffaa3141d6ef7967571216"
+      "bytes": 25109,
+      "sha256": "bcac6cda224e81ceb8aecc08c4268ca8fb0a52b33a7c02e52bd23876e26b6b5a"
+    },
+    "create_metahuman/photo_eye_core.py": {
+      "bytes": 6941,
+      "sha256": "4a5522ef44b6b61ff87cb521afdd58f948181ca752027a8f1ac37ecff6a50ae7"
     },
     "create_metahuman/photo_fit_core.py": {
-      "bytes": 5854,
-      "sha256": "f7c102e726c2bbb234e8c2f24af3e9a1e2463a699ecb804c938e2ab90f9b5d9c"
+      "bytes": 20314,
+      "sha256": "59328067d202bdb3a777cb38e021cec64bcb8edbfce3b8c4cf50b235aea4c63f"
     },
     "create_metahuman/photo_fit_jobs.py": {
-      "bytes": 11954,
-      "sha256": "2849b4a237b9dfd41229b907d4aa6c89f1ed41cbe75be3835841ba85f1f264e1"
+      "bytes": 20293,
+      "sha256": "a2000780e04f24b34ef7ebe9c5dbebf33bf94778d0e6a76c32fd8b8cc41da167"
     },
     "create_metahuman/photo_fit_worker.py": {
-      "bytes": 3058,
-      "sha256": "0d3b762bc3f816334639fca544fcf52a7f7ff7ac1194937468a79c2561e58d59"
+      "bytes": 5686,
+      "sha256": "8b74f7b3c840d522a823db9ba2fd0cf8118ba3f784c404ebccbf79ee80205b8e"
     },
     "create_metahuman/photo_review.py": {
-      "bytes": 12148,
-      "sha256": "080bde34e0f45e9f0c7f69b29a339638165e15c31eb288e2b6618cf7cdfc958c"
+      "bytes": 16910,
+      "sha256": "be988f507a94d44b7ad27331349456081fdd60b0d8522b70a22524a0c6da1c77"
     },
     "create_metahuman/photo_skin.py": {
       "bytes": 3345,
@@ -769,8 +785,8 @@
       "sha256": "49d7cc209e3024d9a6eb55f6a14222193414c9a0f1c02492ab1a221d985f7996"
     },
     "create_metahuman/project_reuse.py": {
-      "bytes": 19150,
-      "sha256": "930dc3f12fdc7cc27eb39f2d9ede9c7724b0578e37b458fac7f6dd0c0da4b236"
+      "bytes": 20034,
+      "sha256": "2acc1871b9fba7bdabca66667526f9e9463180d9dfaacd909a5b6f2b5f63cd8f"
     },
     "create_metahuman/reference_library.py": {
       "bytes": 15119,
@@ -809,8 +825,8 @@
       "sha256": "e613ce7cddf7ae867c31fa5c920c52ba9ccf786040ebd42ff312419c374559db"
     },
     "create_metahuman/resource_budget.py": {
-      "bytes": 4736,
-      "sha256": "0e1e25788f76d997f3dc603cd58c2cf6c767d8492aa2cc31f47b31f425f23910"
+      "bytes": 8420,
+      "sha256": "313fb260820929ac2b500a02beb5cf9c92e05523894d3d2ba4a233713b799e24"
     },
     "create_metahuman/restore_brush.py": {
       "bytes": 26617,
@@ -821,8 +837,8 @@
       "sha256": "e666f0afb9edda4fa154fea936e933c15ad0d623b55980639543d50dd3b9a088"
     },
     "create_metahuman/reuse_wrinkles.py": {
-      "bytes": 7890,
-      "sha256": "822e5a7c826534a2dfa28f1285c862a77150bc75f4bec273b8460c9511386caf"
+      "bytes": 8680,
+      "sha256": "9813f9d16732e1f90bca1d0c6d9e945d12a06db6c280b4a36ef9da532611d56c"
     },
     "create_metahuman/reverse_coverage.py": {
       "bytes": 4421,
@@ -873,8 +889,8 @@
       "sha256": "f2b1027089dbaaa1e0e034721a4ce866ad430ec220583f6ecfddbaf9131bc441"
     },
     "create_metahuman/sculpt_session.py": {
-      "bytes": 43415,
-      "sha256": "9a75a0bf89df4532b08b65557dad7eab8a9023f90f192335fb715b15747a688c"
+      "bytes": 46440,
+      "sha256": "5d41d18696a07dc5a3ce81460dc5bdc0c0d2780ab7f27c4644a2c78f6479b952"
     },
     "create_metahuman/sculpt_session_ops.py": {
       "bytes": 1082,
@@ -1237,16 +1253,16 @@
       "sha256": "dbf478ae3b39a8f64484185fee4ba61cf9ac0fa8c1191d59ddc2e441306f1423"
     },
     "create_metahuman/unreal_actor_preview.py": {
-      "bytes": 7102,
-      "sha256": "c5234f0a83568a8e08eae858a8b4ee78a0f449ca4ba01388318c7cda0bab170d"
+      "bytes": 8845,
+      "sha256": "cedfe2bf96688e4ee084635ec75550947fc0f0655123ea2343b2cd080d71f7ce"
     },
     "create_metahuman/unreal_artist_state.py": {
       "bytes": 8957,
       "sha256": "e198d1b833eeaf1b83efcccc2e96cbccc6f1dbf879e32ca0d0bb6d790e908ebe"
     },
     "create_metahuman/unreal_assembly.py": {
-      "bytes": 18852,
-      "sha256": "5089d1cbedc08fdee6f2d923a2caf6974f769f2effdfe84c4bae085ab43f44e6"
+      "bytes": 31696,
+      "sha256": "5ad23308e546906c783328d286c935c193b8475982a5afc41b9306221029e1c0"
     },
     "create_metahuman/unreal_assembly_auxiliary.py": {
       "bytes": 4313,
@@ -1289,12 +1305,12 @@
       "sha256": "ce4f1bc994280ef53576fe72d42b694909f93e80ff5ccff0ab2f0e6af8e7c550"
     },
     "create_metahuman/unreal_face_look.py": {
-      "bytes": 9151,
-      "sha256": "9f0589afe52dc5fffaaa63720b370d53c01752dd7ffe3e01a21a6fcf2284a94e"
+      "bytes": 9744,
+      "sha256": "39525b31c39a404c993bf1a929175dac60fd681456f8f4559afb43a087c013d3"
     },
     "create_metahuman/unreal_face_review.py": {
-      "bytes": 20557,
-      "sha256": "3b259f07be9510833fbe6dbe6155a79cc03240694c235d71d5764814f276cea3"
+      "bytes": 34205,
+      "sha256": "e95f59ee522cedb86510b361388b9b17cab544a75cc45206b292c981f749a3fb"
     },
     "create_metahuman/unreal_globe_gaze.py": {
       "bytes": 1137,
@@ -1305,20 +1321,28 @@
       "sha256": "082345a23407af19be5416e6091dab73b07ef3e99870c751df525bb8801fd6e5"
     },
     "create_metahuman/unreal_groom.py": {
-      "bytes": 40400,
-      "sha256": "2aab87247954792812150469eed1a82bee491beac9edd2b74a6bf66a84497076"
+      "bytes": 58862,
+      "sha256": "ebe3f4406154ae778ab31cf5c25e3306a2231bcc8c530330261a1505bb76f0b1"
+    },
+    "create_metahuman/unreal_groom_representations.py": {
+      "bytes": 12657,
+      "sha256": "2e9309709df1afb2e9f927780e7e9e9da784515a0e0953ee3d9d65145b724e77"
+    },
+    "create_metahuman/unreal_groom_revision.py": {
+      "bytes": 21894,
+      "sha256": "8b7305b0469e5bb9b01925002522769f46e475d4e7de2e5806aa9638275bc7b6"
     },
     "create_metahuman/unreal_head_revision.py": {
       "bytes": 20326,
       "sha256": "102263fb83447d3c0a67234cac2e0b9a58927b464a3ecfc09a5c01b80d43837f"
     },
     "create_metahuman/unreal_import.py": {
-      "bytes": 31202,
-      "sha256": "0e1cde01148cf84254e2e432b0fa352127ab8b3eaa065010fb518bd92bf55fa5"
+      "bytes": 33387,
+      "sha256": "d56ffa5598c007ef7a2529240c42d1606e775e2a1ba635b8015687a48a5817aa"
     },
     "create_metahuman/unreal_jobs.py": {
-      "bytes": 55182,
-      "sha256": "b813f48f908165c1438824687b80f4b0c92b17581a27e45635b0bc23f05d2b5b"
+      "bytes": 55216,
+      "sha256": "46971b85f427a8a22908586ad9d29846d7f79d11ab87f47dae3ef7b4cc247d5d"
     },
     "create_metahuman/unreal_lash_fit.py": {
       "bytes": 17473,
@@ -1337,8 +1361,8 @@
       "sha256": "a836e2dc7c60bcdbb858e0539750b8811bbb3288dbf61913ec843d5a0327d945"
     },
     "create_metahuman/unreal_lod_correctives.py": {
-      "bytes": 17913,
-      "sha256": "90170044f6a2c7b47c38e1be2c6438a0c68d1b0cd9e311791da66247616d5a84"
+      "bytes": 18521,
+      "sha256": "5338f4bcb95ba8870ad727f5213203c036f5b38a39f33a33bdd09b454730b052"
     },
     "create_metahuman/unreal_native_albedo.py": {
       "bytes": 18840,
@@ -1540,6 +1564,14 @@
       "bytes": 7633,
       "sha256": "6c5791c952889700bb6c67fd98f9b454d26f051104c475eb0b93502a848bff74"
     },
+    "create_metahuman/wrap_fit.py": {
+      "bytes": 7943,
+      "sha256": "c12df625f47f5d96dea73ef4a60426e484df3020057ee6916121e28eab7b7b29"
+    },
+    "create_metahuman/wrap_fit_worker.py": {
+      "bytes": 3288,
+      "sha256": "feb25dbb4dca0991599480f8c9d605794949b7bba3c00d8620f408eaf1feab7d"
+    },
     "create_metahuman/wrap_interiors.py": {
       "bytes": 5296,
       "sha256": "5d12978bd4f304ea8cff80fa6a2798ff96a420363cbb2c8a2ae5a18780df9a92"
@@ -1553,8 +1585,8 @@
       "sha256": "1eabb8cb1402d5e4cb8728c522de6defab635371179e3f35827c090822c688b9"
     },
     "create_metahuman/wrinkle_jobs.py": {
-      "bytes": 11018,
-      "sha256": "8c4b0115774ea06eab22add8d17781db418578d56ac7686707e7f487852c7c1d"
+      "bytes": 11844,
+      "sha256": "0dc8dd8b9fdfc0a6414600b39785f1b2fc8f90ad962aeb4be4883dc591a87d66"
     },
     "create_metahuman/wrinkle_ops.py": {
       "bytes": 1867,
@@ -1573,28 +1605,28 @@
       "sha256": "5ba4dc9226c93cf6d81d6cb1effae69541263cd251cc30f067d4a7268d897298"
     },
     "docs/agents.md": {
-      "bytes": 4757,
-      "sha256": "97d02b25321ea2abd6062ebef3333dcf1a2425499d2d6017826d52d4a8c796bc"
+      "bytes": 21368,
+      "sha256": "f448cec2d6666fdb5efb0e9ea1f7d5bf23b334fcb90126cfbfac2210df5e9aa2"
     },
     "docs/development.md": {
-      "bytes": 4042,
-      "sha256": "b14acb16a9426b3a44b2a70f95c3d246d616d8773f4d679eb27c826ef530ff85"
+      "bytes": 4398,
+      "sha256": "aa4d2b26f2abdb9941af5322271dcce258540effcd12affe1074248d6d3083cb"
     },
     "docs/installation.md": {
       "bytes": 8127,
       "sha256": "f023b076c745605a24c4f40dfbdbd1e11dbcc8ff9ee899dfb580377d72a47407"
     },
     "docs/known-issues.md": {
-      "bytes": 2492,
-      "sha256": "ab50ecdc2ea4e585db251d77c8410e2e070f5761c94ab08329cb1f42cdfd91f9"
+      "bytes": 5233,
+      "sha256": "f091d4201b5a12cd3f0bbffc6d6ecfcc006d2f174d58e26421ddc9e14a37f5cc"
     },
     "docs/launch.md": {
-      "bytes": 1615,
-      "sha256": "457aaf20b0a8ae8073c66cd9e183ef4a5f3191e24cfdcd2c0872ced3aa57c7df"
+      "bytes": 1300,
+      "sha256": "d3fd0e67588898bbae3165ece3b7ebfc8ce66bfbd01caeea7c65499012faba08"
     },
     "docs/media/README.md": {
-      "bytes": 1381,
-      "sha256": "6631268f97aba1803a24a1a87d5ae1b61f9f91e4953ce89d424458981ee32bec"
+      "bytes": 1536,
+      "sha256": "27ee5e73c48ca9eaa436dfaac6a042bb489f1c71b450e40228f95cd80a0eff07"
     },
     "docs/media/agent-workflow.gif": {
       "bytes": 327615,
@@ -1609,8 +1641,8 @@
       "sha256": "1bba5363b0f13615fd2b7effeb471370bb566dcc89b92f21ba97863fb300702a"
     },
     "docs/media/hero.jpg": {
-      "bytes": 170731,
-      "sha256": "f0083808ead29bbe66f40856f9411650595d99de722811dbd3d216346d27dd9c"
+      "bytes": 361022,
+      "sha256": "94afe49224fbde7423bb3f4592adf60dc363b97aa0ee4553e68499e50ff5f71f"
     },
     "docs/media/skin-maps.jpg": {
       "bytes": 348964,
@@ -1629,32 +1661,32 @@
       "sha256": "396a1d27b74e609cbed342e9d40fdd78c462dec05489cc9f9b8733c975698339"
     },
     "docs/quickstart.md": {
-      "bytes": 4186,
-      "sha256": "d24c946017ac8c4502eeb5dfba18947529efae24826aacd3c34952bdd57da8e2"
+      "bytes": 4536,
+      "sha256": "c184bf93b34a24ab2967037cd9dc635207a27d0c6108dcd021d02d67feb276b9"
     },
     "docs/release-notes.md": {
-      "bytes": 2421,
-      "sha256": "ca1f3bcdbb3dd38ceaf8753d53e1b3abac95ab2ef15b3856696aa29048cfdda1"
+      "bytes": 23623,
+      "sha256": "1486e3c8db086b70e25be643d68869c28123ab6628e2ab88efd12481f1afdb49"
     },
     "docs/releasing.md": {
-      "bytes": 2655,
-      "sha256": "369af02dff88249b9df1ffedaeb4f15d7bf9d8c34fc53dd46eced96378c789c4"
+      "bytes": 2675,
+      "sha256": "352acc07ea2066eef1e0a987bd5f7da036556e6ceb8a76c9fe649f952b0883f7"
     },
     "docs/troubleshooting.md": {
       "bytes": 3849,
       "sha256": "ac3fcd5635b1f6693865c884aea373ffb639d2e1f4e5da2ed38504ebb335c9ce"
     },
     "docs/workflows.md": {
-      "bytes": 10475,
-      "sha256": "3902b1905b691449d35a0fcd919ba8133ea0a9be30879c7a7215392b717b7947"
+      "bytes": 44237,
+      "sha256": "cdba202ea726cc8dd02e26c6765b1385faeb537a316a43fd28fb29a85cf4c4de"
     },
     "plugins/CreateMetaHumanBridge/CreateMetaHumanBridge.uplugin": {
-      "bytes": 787,
-      "sha256": "72ddcc30eb4a77529077565953a130bc89bb9b63b2c5fa2373d190b5df5843b7"
+      "bytes": 847,
+      "sha256": "25c11dff514a18bcb5fec32f1196a577adacedc5847778a380bee03a31716fe6"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/CreateMetaHumanBridge.Build.cs": {
-      "bytes": 737,
-      "sha256": "31122d445a6d6344b8344eca577df8feb485e3f331cfd142b3b81b77a723492a"
+      "bytes": 824,
+      "sha256": "18fe5ea2583dd1086678a01809e800de802b9b5e0775a49d1b42fed58520266d"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHArtistLibrary.cpp": {
       "bytes": 12920,
@@ -1681,12 +1713,20 @@
       "sha256": "f728ca9584f27fb24c38ae3c0685996c178cd1093639372e37e65d62a807ea16"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHExpressionRuntime.cpp": {
-      "bytes": 30661,
-      "sha256": "db618fedd9c919aefd5ce69a2f2fc780a89669f94a6255922ffab221f26a48c7"
+      "bytes": 37004,
+      "sha256": "005d4023aabaa79a8d158948aa30a09fad3b2883af5e2e17ced6cfba0e120312"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHGroomBlueprint.cpp": {
+      "bytes": 6075,
+      "sha256": "dabc9a55f2dd2c299b8de929cbac382436d8c06bcfca1760c402887e9a8f90d3"
+    },
+    "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHGroomLOD.cpp": {
+      "bytes": 26313,
+      "sha256": "5e58b19881149f897dee003634a9b0f7a170cef056c3e19d2be25e43e4ddf398"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHGroomLibrary.cpp": {
-      "bytes": 6560,
-      "sha256": "f3b88d1ff685b7b261f3fe6260a75202bc3f747c76c2357fa76de3172216d762"
+      "bytes": 16948,
+      "sha256": "2d670a0c43d12377a89792c6cf232fa50f9e66edf297afbd398e9e21060feba4"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Private/CreateMHPoseCorrectives.cpp": {
       "bytes": 18646,
@@ -1713,12 +1753,12 @@
       "sha256": "fdf9f65c1b6ad02b94127b83c28b1bc8fbe62dc945c298c3129207ce84915e81"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHExpressionLibrary.h": {
-      "bytes": 3542,
-      "sha256": "af6ecd5b91475d2d971e53a17224587e2d6c9aa85148868757ef9f3ff1c1d756"
+      "bytes": 4896,
+      "sha256": "4ef45a624c0eac6187962f3bdc0aefde5a7563a9e581a046f5fd8d7058fa37ec"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHGroomLibrary.h": {
-      "bytes": 548,
-      "sha256": "0af82255f52783c49a80a879b8650f236deb606611874bddd1210eea705b0e5c"
+      "bytes": 2691,
+      "sha256": "2e8f44380059a0f1b57da3b19d339e1eafa1266877fb407a77ed8dbd685f7e6b"
     },
     "plugins/CreateMetaHumanBridge/Source/CreateMetaHumanBridge/Public/CreateMHSkinLibrary.h": {
       "bytes": 908,
@@ -1736,9 +1776,29 @@
       "bytes": 6124,
       "sha256": "428e1f4c787770c6fa9d0b8b667de99a5c3ccaf5618886afb328d8c1d5763ddf"
     },
+    "tests/groom_group_mapping.py": {
+      "bytes": 3246,
+      "sha256": "20119f4d93309567d15f6a18668d422dbf7b16727ec94aac97a49f264c01951a"
+    },
+    "tests/groom_lod_warp.py": {
+      "bytes": 1870,
+      "sha256": "69a726e73610df0b88943588d51369fccf74d21cd57445eaaa33de29136c0cd2"
+    },
     "tests/native_assembly_memory.py": {
-      "bytes": 5050,
-      "sha256": "726c6351afaf7e1b39d7746de0b57af6ca60dec2ac5a3df90d456398c22d4840"
+      "bytes": 8837,
+      "sha256": "26f2d25656e937173a96f7741c2fb5a56d5cc3a5a08bb9e41858a87922d457f1"
+    },
+    "tests/photo_eyes.py": {
+      "bytes": 1873,
+      "sha256": "7aeaeb5495b8ac1202247e441186a3038737a2936aff31024ff0820ce4ec74f4"
+    },
+    "tests/photo_multiview.py": {
+      "bytes": 5617,
+      "sha256": "b5ab9a1622a23e7eba127aca1b3c2614e4896b30d5e1d7b09e143d132b2b0175"
+    },
+    "tests/photo_visibility.py": {
+      "bytes": 3658,
+      "sha256": "31c61098d2abfc81bbc1f8f9bd426233981b4bfc838664f52acb34e4888a215d"
     },
     "tests/release_source.py": {
       "bytes": 4637,
@@ -1785,16 +1845,16 @@
       "sha256": "cf72c4e9edd6b45deb5f637efc734a8634cc51a38857819d716c3ef4e8bde314"
     },
     "tools/setup_models.py": {
-      "bytes": 2438,
-      "sha256": "332fef1e0da7cc0578618f8424069d6bf97aabfa86540f4ed36e6217ad54c7a3"
+      "bytes": 2614,
+      "sha256": "536e47f20b2fc34e20173d9850a0c3d68e00db679f71957b8c23a7cd5df1231b"
     },
     "tools/setup_surface_solver.py": {
       "bytes": 453,
       "sha256": "5da00c36fc8ddeee33cd3e33a22836867e7e52e9cabd29962bdf05348d608986"
     },
     "tools/source_release.py": {
-      "bytes": 10720,
-      "sha256": "fd5ad7868034c3b55fe011989ef71e78440030660c883c1a0f97c53593cc276c"
+      "bytes": 10924,
+      "sha256": "a3cbc0438aa1be5839bc46f0823416e268b30bb926724beee3b49be18119e801"
     },
     "tools/verify_package.py": {
       "bytes": 1949,

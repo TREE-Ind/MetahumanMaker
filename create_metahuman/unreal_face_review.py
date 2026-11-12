@@ -1,5 +1,5 @@
 """Receipt-backed facial inspection, with explicit saved skin revisions."""
-import json,os,runpy
+import json,math,os,runpy,time
 from pathlib import Path
 
 
@@ -22,10 +22,12 @@ def _snapshot(api,components,allow_transient=False):
     states={}
     actor=next(iter(components.values())).get_owner() if components else None
     sync={c.get_path_name():dict(ticking=c.is_component_tick_enabled(),forced_lod=c.get_editor_property('forced_lod'),managed=sorted(str(row.get_editor_property('name')) for row in c.get_editor_property('components_to_sync') if row.get_editor_property('sync_option')!=unreal.SyncOption.DISABLED)) for c in actor.get_components_by_class(unreal.LODSyncComponent)} if actor else {}
+    lod_state=json.loads(api.capture_editor_lod_state(actor)) if actor and hasattr(api,'capture_editor_lod_state') else None
     for path,component in components.items():
         raw=api.capture_component_preview_state(component,allow_transient)
         if not raw:raise ValueError('Cannot safely restore '+component.get_name()+': finish custom/Sequencer animation or save its animation asset first')
         states[path]=json.loads(raw);states[path]['lod_sync']=sync;states[path]['lod_sync_driven']=any(component.get_name() in row['managed'] for row in sync.values())
+        if lod_state is not None:states[path]['component_lods']=lod_state
     return states
 
 
@@ -42,11 +44,22 @@ def _restore(api,components,states):
     for path in order:
         if not api.restore_component_preview_state(components[path],json.dumps(states[path])):failed.append(path)
     if failed:raise RuntimeError('Could not restore playback settings for '+', '.join(failed))
+    if hasattr(api,'refresh_editor_preview_pose'):
+        for path in order:
+            if not api.refresh_editor_preview_pose(components[path]):raise RuntimeError('Could not evaluate restored playback on '+components[path].get_name())
     # Initializing the face blueprint can change its parent's editor tick flag.
     # Finalize playback flags only after every component has initialized.
     for path,row in states.items():
         component=components[path];component.set_forced_lod(int(row['forced_lod']));component.set_editor_property('pause_anims',row['paused']);component.set_update_animation_in_editor(row['editor_tick'])
-    for path,row in recorded.items():sync[path].set_editor_property('forced_lod',row['forced_lod']);sync[path].set_component_tick_enabled(row['ticking'])
+    lod_state=next(iter(states.values())).get('component_lods') if states else None
+    if lod_state is not None:
+        if not api.restore_editor_lod_state(actor,json.dumps(lod_state)) or json.loads(api.capture_editor_lod_state(actor))!=lod_state:
+            raise RuntimeError('Could not restore original character render/streaming LOD requests')
+    for path,row in recorded.items():
+        if hasattr(api,'refresh_editor_lod_sync'):
+            if not api.refresh_editor_lod_sync(sync[path],row['forced_lod'],False):raise RuntimeError('Could not restore the character LODSync setting')
+        else:sync[path].set_editor_property('forced_lod',row['forced_lod'])
+        sync[path].set_component_tick_enabled(row['ticking'])
 
 
 def _guard(api,components,expected):
@@ -55,7 +68,11 @@ def _guard(api,components,expected):
     for path,row in expected.items():
         for key,value in row.items():
             if key=='position' and row.get('playing') and row.get('rate'):continue
-            if key=='forced_lod' and row.get('lod_sync_driven') and any(s['ticking'] and s['forced_lod']<0 for s in row.get('lod_sync',{}).values()):continue
+            if key=='forced_lod' and row.get('lod_sync_driven') and any(s['ticking'] for s in row.get('lod_sync',{}).values()):continue
+            if key=='component_lods':
+                managed={name for sync in row.get('lod_sync',{}).values() if sync['ticking'] for name in sync['managed']}
+                stable=lambda values:{path:data for path,data in values.items() if path.rsplit('.',1)[-1] not in managed}
+                if stable(current[path].get(key,{}))==stable(value):continue
             if current[path].get(key)!=value:raise ValueError('Playback changed outside this review on '+components[path].get_name()+' ('+key+': expected '+str(value)+', found '+str(current[path].get(key))+'); retain those edits before continuing')
 
 
@@ -63,6 +80,45 @@ def _look_api():return runpy.run_path(str(Path(__file__).with_name('unreal_face_
 
 
 def _comparison_api():return runpy.run_path(str(Path(__file__).with_name('unreal_face_comparison.py')))
+
+
+def _skin_driver_state(unreal,actor):
+    """Read evaluated material uniforms; controls alone do not prove skin response."""
+    skin=_look_api()['info'](unreal,actor)
+    if not skin:return dict(available=False,reason='No supported native head skin material')
+    values=skin['uniforms']
+    drivers={name:value for name,value in values['scalars'].items()
+        if name.startswith(('head_wm','head_cm'))}
+    if any(not math.isfinite(value) for value in drivers.values()):
+        raise ValueError('Native skin expression drivers contain non-finite values')
+    return dict(available=bool(drivers),material=skin['material'],values=drivers,
+        active_count=sum(abs(value)>1e-6 for value in drivers.values()),driver_count=len(drivers),
+        animated_textures={name:path for name,path in values['textures'].items() if 'animated' in name.casefold()},
+        scope='Evaluated material inputs, not proof of visible wrinkle or color quality')
+
+
+def _camera_state(unreal):
+    """Record camera inputs without changing the artist's viewport or exposure."""
+    try:
+        levels=unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
+        actor=levels.get_pilot_level_actor()
+        if not isinstance(actor,unreal.CameraActor):
+            return dict(available=False,reason='The current viewport is not piloting a camera actor')
+        camera=next(iter(actor.get_components_by_class(unreal.CameraComponent)),None)
+        if not camera:return dict(available=False,reason='The piloted actor has no camera component')
+        settings=camera.get_editor_property('post_process_settings')
+        keys=('override_auto_exposure_method','override_auto_exposure_bias',
+              'override_auto_exposure_apply_physical_camera_exposure',
+              'auto_exposure_bias','auto_exposure_apply_physical_camera_exposure',
+              'camera_iso','camera_shutter_speed')
+        exposure={key:settings.get_editor_property(key) for key in keys}
+        exposure['auto_exposure_method']=str(settings.get_editor_property('auto_exposure_method'))
+        return dict(available=True,actor=actor.get_path_name(),label=actor.get_actor_label(),
+            exact_camera_view=levels.get_exact_camera_view(),
+            post_process_blend_weight=float(camera.get_editor_property('post_process_blend_weight')),
+            exposure=exposure,scope='Piloted camera inputs; volumes and viewport overrides can affect final exposure')
+    except Exception as error:
+        return dict(available=False,reason=str(error))
 
 
 def _actor(unreal,path):
@@ -75,7 +131,143 @@ def _actor(unreal,path):
 def _report(unreal,state,actor,**extra):
     look=_look_api();skin=look['info'](unreal,actor)
     values={key:skin[key] for key in ('normal','micro')} if skin else None
-    return dict(status='complete',mode=state['mode'],origin=state['origin'],actor=state['actor'],actor_label=state['actor_label'],raw_controls=state['raw_controls'],controls=state['controls'],preview_applied=state['preview_applied'],look_values=values,look_preview=bool(state.get('look')),skin_undo_available=look['undo_available'](unreal,actor),assets_saved=0,comparison=state.get('comparison'),calibration_capture=state.get('calibration_capture'),calibration_capture_folder=state.get('calibration_capture_folder',''),calibration_capture_attempt=state.get('calibration_capture_attempt'),calibration_preparation=state.get('calibration_preparation'),calibration_preparation_attempt=state.get('calibration_preparation_attempt'),calibration_staging=state.get('calibration_staging'),**extra)
+    return dict(status='complete',mode=state['mode'],origin=state['origin'],actor=state['actor'],actor_label=state['actor_label'],raw_controls=state['raw_controls'],controls=state['controls'],preview_applied=state['preview_applied'],look_values=values,look_preview=bool(state.get('look')),skin_undo_available=look['undo_available'](unreal,actor),assets_saved=0,comparison=state.get('comparison'),shaded_capture=state.get('shaded_capture'),calibration_capture=state.get('calibration_capture'),calibration_capture_folder=state.get('calibration_capture_folder',''),calibration_capture_attempt=state.get('calibration_capture_attempt'),calibration_preparation=state.get('calibration_preparation'),calibration_preparation_attempt=state.get('calibration_preparation_attempt'),calibration_staging=state.get('calibration_staging'),**extra)
+
+
+def _begin_render_warmup(unreal,api):
+    """Keep captures rendering without saving viewport/performance preferences."""
+    native={}
+    if hasattr(api,'begin_editor_viewport_refresh') and hasattr(api,'end_editor_viewport_refresh'):
+        raw=api.begin_editor_viewport_refresh()
+        if not raw:raise RuntimeError('Open a level viewport before capturing its shaded view')
+        native=json.loads(raw)
+        if not native.get('token') or not native.get('realtime_active'):
+            if native.get('token'):api.end_editor_viewport_refresh(native['token'])
+            raise RuntimeError('Could not temporarily enable viewport rendering')
+    try:
+        shared=getattr(unreal,'_cm_shaded_render_warmup',None)
+        if shared is None:
+            performance=unreal.get_default_object(unreal.load_class(None,'/Script/UnrealEd.EditorPerformanceSettings'))
+            before=bool(performance.get_editor_property('bThrottleCPUWhenNotForeground'))
+            performance.set_editor_property('bThrottleCPUWhenNotForeground',False,notify_mode=unreal.PropertyAccessChangeNotifyMode.NEVER)
+            shared=dict(users=0,performance=performance,background_before=before)
+            unreal._cm_shaded_render_warmup=shared
+        shared['users']+=1
+        return dict(native=native,closed=False,background_before=shared['background_before'])
+    except Exception:
+        if native.get('token'):api.end_editor_viewport_refresh(native['token'])
+        raise
+
+
+def _end_render_warmup(unreal,api,warmup):
+    if warmup.get('closed'):return {}
+    warmup['closed']=True
+    result={}
+    try:
+        token=warmup.get('native',{}).get('token')
+        if token:
+            raw=api.end_editor_viewport_refresh(token)
+            if not raw:raise RuntimeError('Could not release the capture viewport override')
+            result['viewport']=json.loads(raw)
+    finally:
+        shared=getattr(unreal,'_cm_shaded_render_warmup',None)
+        if shared:
+            shared['users']-=1
+            if shared['users']==0:
+                shared['performance'].set_editor_property('bThrottleCPUWhenNotForeground',shared['background_before'],notify_mode=unreal.PropertyAccessChangeNotifyMode.NEVER)
+                result['background_restored']=True
+                del unreal._cm_shaded_render_warmup
+            else:result['other_captures_active']=shared['users']
+    return result
+
+
+def _capture_view(unreal,folder,state,actor,api):
+    """Capture the current shaded viewport without switching camera or pose."""
+    folder=Path(folder);file=folder/'native-view.png'
+    if file.exists():raise ValueError('Observe the original shaded capture; do not overwrite it')
+    budget=runpy.run_path(str(Path(__file__).with_name('resource_budget.py')))
+    budget['require']('native shaded capture',256*budget['MIB'])
+    budget['require_disk']('native shaded capture',folder,64*budget['MIB'])
+    owner=runpy.run_path(str(Path(__file__).with_name('process_ref.py')))['identify'](os.getpid())
+    if not owner:raise RuntimeError('Could not identify the Unreal process for shaded capture recovery')
+    _write(folder/'capture-owner.json',owner)
+    # Passing a camera makes the automation API change the pilot. Capturing
+    # the current viewport instead retains the artist's framing and camera.
+    active=getattr(unreal,'_cm_shaded_views',{})
+    if str(folder) in active:raise ValueError('Observe the original pending shaded capture before requesting another')
+    curve_key=runpy.run_path(str(Path(__file__).with_name('expression_controls.py')))['native_curve_key']
+    job=dict(task=None,handle=None,started=time.monotonic())
+    job['warmup']=_begin_render_warmup(unreal,api)
+    def tick(delta):
+        report=None
+        try:
+            if time.monotonic()-job['started']>60:
+                raise RuntimeError('The shaded screenshot did not finish within 60 seconds; inspect the original capture receipt before retrying')
+            if hasattr(api,'refresh_editor_lod_sync'):
+                for sync in actor.get_components_by_class(unreal.LODSyncComponent):
+                    if sync.is_component_tick_enabled() and not api.refresh_editor_lod_sync(sync):raise RuntimeError('Could not refresh native LOD streaming')
+            # A control command can finish before the editor's face tick and
+            # temporal lighting have rendered the new pose. Let both settle.
+            if job['task'] is None:
+                unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).editor_invalidate_viewports()
+                if time.monotonic()-job['started']<2:return
+                lods=json.loads(api.capture_editor_lod_state(actor)) if hasattr(api,'capture_editor_lod_state') else {}
+                requested=state.get('lod',-1)
+                if requested>=0 and lods.get(state['face'],{}).get('rendered')!=requested:
+                    if time.monotonic()-job['started']<30:return
+                    raise RuntimeError('The requested face LOD is unavailable or overridden; inspect native LOD settings and streaming before capturing')
+                job['component_lods']=lods
+                face=_components(unreal,actor)[state['face']];instance=face.get_anim_instance()
+                evaluated={name:float(instance.get_curve_value(curve_key(name))) for name in state['controls']} if instance else {}
+                if any(name not in evaluated or not math.isfinite(evaluated[name]) or abs(evaluated[name]-value)>1e-5 for name,value in state['controls'].items()):
+                    raise RuntimeError('The native face has not evaluated the requested controls; apply the pose again before capturing')
+                job['evaluated_controls']=evaluated
+                job['camera_state']=_camera_state(unreal)
+                job['task']=unreal.AutomationLibrary.take_high_res_screenshot(1920,1080,str(file),delay=.2)
+                if not job['task'] or not job['task'].is_valid_task():raise RuntimeError('Open a rendered Unreal level viewport before capturing its view')
+                return
+            if not job['task'].is_task_done():return
+            current=_actor(unreal,state['actor'])
+            if not current:raise ValueError('The original actor closed during shaded capture')
+            _guard(api,_components(unreal,current),state['expected']);_look_api()['guard'](unreal,current,state)
+            if not file.is_file() or file.stat().st_size==0:raise RuntimeError('Unreal completed the screenshot without an image')
+            captured=dict(file=str(file.resolve()),width=1920,height=1080,controls=dict(state['controls']),evaluated_controls=job['evaluated_controls'],component_lods=job['component_lods'],native_shading=True)
+            captured['skin_expression_state']=_skin_driver_state(unreal,current)
+            captured['camera_state']=job['camera_state']
+            # component_lods stores forced requests for recovery, not the
+            # renderer's selected hair representation. Keep these separate.
+            groom_api=getattr(unreal,'CreateMHGroomLibrary',None)
+            if groom_api and hasattr(groom_api,'capture_groom_representation_state'):
+                captured['rendered_grooms']={}
+                for component in current.get_components_by_class(unreal.GroomComponent):
+                    # IsRegistered is not exposed on GroomComponent in UE's
+                    # Python API. The native capture checks registration and
+                    # returns an empty string for unavailable render state.
+                    raw=groom_api.capture_groom_representation_state(component)
+                    if raw:captured['rendered_grooms'][component.get_path_name()]=json.loads(raw)
+            state['shaded_capture']=captured;_write(Path(state['origin'])/'session.json',state)
+            report=_report(unreal,state,current,message='Saved the current shaded Unreal view. Camera, playback and assets retained.')
+        except Exception as error:report=dict(status='failed',error=str(error))
+        finally:
+            if report is not None:
+                try:
+                    try:
+                        released=_end_render_warmup(unreal,api,job['warmup'])
+                        if report.get('status')=='complete':
+                            captured=state['shaded_capture']
+                            captured['render_warmup']=dict(viewport=job['warmup']['native'],release=released,
+                                background_throttle_before=job['warmup']['background_before'],
+                                scope='Temporary realtime/background rendering; texture residency and temporal convergence are not certified')
+                            report['shaded_capture']=captured
+                            _write(Path(state['origin'])/'session.json',state)
+                    except Exception as error:report=dict(status='failed',error='Shaded capture cleanup failed: '+str(error))
+                    _write(folder/'receipt.json',report)
+                finally:unreal.unregister_slate_post_tick_callback(job['handle']);active.pop(str(folder),None)
+    try:job['handle']=unreal.register_slate_post_tick_callback(tick)
+    except Exception:
+        _end_render_warmup(unreal,api,job['warmup']);raise
+    active[str(folder)]=(job,tick);unreal._cm_shaded_views=active
+    return dict(status='queued',receipt_delegated=True)
 
 
 def _reacquire(unreal,path):
@@ -88,6 +280,7 @@ def dispatch(folder,request):
     import unreal
     folder=Path(folder).resolve();api=_native(unreal)
     if unreal.get_editor_subsystem(unreal.LevelEditorSubsystem).is_in_play_in_editor():raise ValueError('Stop Play or Simulate before reviewing native facial controls')
+    if getattr(unreal,'_cm_shaded_views',{}):raise ValueError('Wait for the original shaded-view capture')
     if getattr(unreal,'_cm_native_lash_fits',{}):raise ValueError('Wait for native lash fitting before changing the facial pose')
     if getattr(unreal,'_cm_lid_preparations',{}):raise ValueError('Wait for or cancel the original lid preparation before changing facial review')
     active=getattr(unreal,'_cm_face_review_sessions',{});action=request['action']
@@ -106,7 +299,8 @@ def dispatch(folder,request):
             _look_api()['guard'](unreal,actor,previous)
             _comparison_api()['guard'](unreal,previous)
             return _report(unreal,previous,actor,reconnected=True)
-        if len(faces)!=1 or faces[0].get_editor_property('disable_post_process_blueprint'):raise ValueError('Select an assembled Face with native post-processing enabled')
+        if len(faces)!=1:raise ValueError('Select the assembled character actor with one Face component; currently selected: '+actor.get_actor_label())
+        if faces[0].get_editor_property('disable_post_process_blueprint'):raise ValueError('Enable native post-processing on '+actor.get_actor_label()+' / Face before facial review')
         face=faces[0];controls=[name for name in api.get_face_raw_controls(face.get_skeletal_mesh_asset()) if name.startswith('CTRL_expressions.')]
         if not controls:raise ValueError('The selected face has no embedded native facial DNA controls')
         before=_snapshot(api,components);owner=runpy.run_path(str(Path(__file__).with_name('process_ref.py')))['identify'](os.getpid())
@@ -136,6 +330,7 @@ def dispatch(folder,request):
         _guard(api,components,state['expected']);look['guard'](unreal,actor,state)
         comparison=_comparison_api();comparison['guard'](unreal,state)
         if state.get('comparison') and action not in {'APPLY','RESTORE','COMPARE_STAGED','FRAME_COMPARISON'}:raise ValueError('End the temporary comparison before changing saved rig or skin settings')
+        if action=='CAPTURE_VIEW':return _capture_view(unreal,folder,state,actor,api)
         if action=='RESTORE':
             comparison['stop'](unreal,state)
             look['restore'](unreal,actor,state)
@@ -149,14 +344,14 @@ def dispatch(folder,request):
             if type(lod) is not int or not -1<=lod<=7:raise ValueError('Choose Keep Current LOD or a native face LOD from 0 to 7')
             preview=runpy.run_path(str(Path(__file__).with_name('unreal_actor_preview.py')))['preview_clip']
             checkpoint=look['checkpoint'](unreal,actor,state)
-            previous={key:state[key] for key in ('expected','controls','preview_applied')}
+            previous={key:state[key] for key in ('expected','controls','preview_applied')};previous['lod']=state.get('lod',-1)
             comparison_before=state['comparison']['expected'] if state.get('comparison') else None
             try:
                 if 'look' in request:look['apply'](unreal,actor,state,request['look'])
                 preview(actor,clip,0.,force_lod=None if lod==-1 else lod,lock_lod_sync=True)
                 comparison['apply'](unreal,state,controls,lod)
                 expected=_snapshot(api,components,True)
-                state.update(expected=expected,controls=controls,preview_applied=True)
+                state.update(expected=expected,controls=controls,preview_applied=True,lod=lod)
                 _write(origin/'session.json',state);active[str(origin)]=state
             except Exception:
                 _restore(api,components,previous['expected']);state.update(previous)

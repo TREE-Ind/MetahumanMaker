@@ -16,6 +16,7 @@ from . import (
     reuse_wrinkles,
     sculpt_archive,
     textures,
+    simple_shading,
 )
 from . import mesh_ops as m
 
@@ -60,9 +61,16 @@ def read(context, path, part):
             raise ValueError('Saved result no longer matches its original template topology')
         accessories = {name: getattr(features, name) for name in ('eye_left', 'eye_right', 'teeth')} if part == 'HEAD' else {}
         with context.temp_override(scene=scene, view_layer=scene.view_layers[0]):
+            # Appended scenes have not evaluated their saved parent/constraint
+            # transforms in the destination view layer. Resolve them in their
+            # own scene before snapshotting world matrices and detaching.
+            context.view_layer.update()
             details, current_details = reuse_details.inspect(context, scene, obj, part)
             wrinkle_state = reuse_wrinkles.inspect(context, scene, part, path)
-        items = list(dict.fromkeys(item for item in [obj, reference, *accessories.values(), *details, *reuse_wrinkles.objects(wrinkle_state)] if item))
+        # Managed SIMPLE shading is part of the retained sculpt, not an
+        # arbitrary live modifier. Its owned helper must survive scene cleanup.
+        shading_helpers=[layer.get(simple_shading.HELPER) for layer in details if layer.get(simple_shading.ENABLED)]
+        items = list(dict.fromkeys(item for item in [obj, reference, *accessories.values(), *details, *shading_helpers, *reuse_wrinkles.objects(wrinkle_state)] if item))
         worlds = {item: item.matrix_world.copy() for item in items}
         for item in items:
             if not item:
@@ -70,7 +78,7 @@ def read(context, path, part):
             m.check_mesh(item, 'Saved character part')
             if item.get('cm_individual_sculpt_part'):
                 raise ValueError('Finish the individual sculpt in the saved project before reusing this part')
-            if item.modifiers:
+            if item.modifiers and (item not in details or simple_shading.blocking_modifiers(item)):
                 raise ValueError('Apply live modifiers on the saved part before importing it')
             expression = item.data.shape_keys.key_blocks.get('Expression Check') if item.data.shape_keys else None
             if expression and expression.value:
@@ -301,7 +309,11 @@ def import_part(context, s, f, filename, part):
                 identity = map_provenance.identity(context.scene, key)
                 ledger['entries'].pop(identity, None)
                 invalid.pop(identity, None)
-            map_provenance.manifest(context.scene).write_text(json.dumps(ledger), encoding='utf-8')
+            manifest=map_provenance.manifest(context.scene)
+            # A geometry-only donor has no maps to publish, but still needs
+            # the provenance ledger's directory on its first import.
+            manifest.parent.mkdir(parents=True,exist_ok=True)
+            manifest.write_text(json.dumps(ledger), encoding='utf-8')
             context.scene[map_provenance.INVALIDATED] = json.dumps(invalid)
             map_provenance.record(context.scene, map_provenance.basis_for_files(context.scene, names), origin='PROJECT_REUSE', outputs=names)
             m.activate(context, detail or obj)

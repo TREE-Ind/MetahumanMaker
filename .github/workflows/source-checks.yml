@@ -24,4 +24,10 @@ jobs:
           python-version: '3.12'
       - run: python tests/release_source.py
       - run: python tests/native_assembly_memory.py
+      - run: python -m pip install numpy==2.5.4 scipy==1.18.0
+      - run: python tests/photo_multiview.py
+      - run: python tests/photo_eyes.py
+      - run: python tests/photo_visibility.py
+      - run: python tests/groom_group_mapping.py
+      - run: python tests/groom_lod_warp.py
       - run: python tools/source_release.py --archive

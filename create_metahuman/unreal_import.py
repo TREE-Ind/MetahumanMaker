@@ -50,8 +50,22 @@ def audit_head_conform(character, vertices, output_file):
     return result
 
 
+IRIS_OPTION_FIELDS = {
+    'primary_color_hue': ('primary_color_u', 0., 1.),
+    'secondary_color_hue': ('secondary_color_u', 0., 1.),
+    'secondary_color_value': ('secondary_color_v', 0., 1.),
+    'iris_color_blend': ('color_blend', 0., 1.),
+    'iris_blend_softness': ('color_blend_softness', 0., 1.),
+    'iris_rotation': ('rotation', 0., 1.),
+    'iris_shadow_details': ('shadow_details', 0., 1.),
+    'limbal_ring_size': ('limbal_ring_size', .6, .85),
+    'limbal_ring_softness': ('limbal_ring_softness', .02, .15),
+}
+
+
 def eye_options(value):
-    if not isinstance(value, dict) or set(value) != {'global_tint', 'global_saturation', 'cornea_size'}:
+    if (not isinstance(value, dict) or not {'global_tint','global_saturation','cornea_size'}<=set(value)
+            or set(value)-({'global_tint','global_saturation','cornea_size','pupil_dilation','primary_color_value'} | set(IRIS_OPTION_FIELDS))):
         raise ValueError('Eye appearance needs tint, saturation and iris size')
     tint=value['global_tint'];saturation=value['global_saturation'];size=value['cornea_size']
     if (not isinstance(tint,(list,tuple)) or len(tint)!=3
@@ -59,7 +73,24 @@ def eye_options(value):
             or type(saturation) not in (int,float) or not math.isfinite(saturation) or not 0<=saturation<=4
             or type(size) not in (int,float) or not math.isfinite(size) or not .145-1e-6<=size<=.185+1e-6):
         raise ValueError('Eye appearance contains an invalid color, saturation or iris size')
-    return dict(global_tint=list(tint),global_saturation=float(saturation),cornea_size=max(.145,min(.185,float(size))))
+    result=dict(global_tint=list(tint),global_saturation=float(saturation),cornea_size=max(.145,min(.185,float(size))))
+    if 'pupil_dilation' in value:
+        pupil=value['pupil_dilation']
+        if type(pupil) not in (int,float) or not math.isfinite(pupil) or not .85-1e-6<=pupil<=1.2+1e-6:
+            raise ValueError('Choose native pupil dilation between 0.85 and 1.2')
+        result['pupil_dilation']=max(.85,min(1.2,float(pupil)))
+    if 'primary_color_value' in value:
+        lightness=value['primary_color_value']
+        if type(lightness) not in (int,float) or not math.isfinite(lightness) or not 0<=lightness<=1:
+            raise ValueError('Choose iris lightness between zero and one')
+        result['primary_color_value']=float(lightness)
+    for name, (_, lower, upper) in IRIS_OPTION_FIELDS.items():
+        if name not in value:continue
+        number=value[name]
+        if type(number) not in (int,float) or not math.isfinite(number) or not lower-1e-6<=number<=upper+1e-6:
+            raise ValueError(f'Choose {name.replace("_", " ")} between {lower:g} and {upper:g}')
+        result[name]=max(lower,min(upper,float(number)))
+    return result
 
 
 def apply_eye_settings(character, subsystem, value):
@@ -72,8 +103,14 @@ def apply_eye_settings(character, subsystem, value):
         iris=eye.get_editor_property('iris');cornea=eye.get_editor_property('cornea')
         iris.set_editor_property('global_tint',unreal.LinearColor(*value['global_tint'],1))
         iris.set_editor_property('global_saturation',value['global_saturation'])
+        if 'primary_color_value' in value:iris.set_editor_property('primary_color_v',value['primary_color_value'])
+        for key,(property_name,_,_) in IRIS_OPTION_FIELDS.items():
+            if key in value:iris.set_editor_property(property_name,value[key])
         cornea.set_editor_property('size',value['cornea_size'])
         eye.set_editor_property('iris',iris);eye.set_editor_property('cornea',cornea)
+        if 'pupil_dilation' in value:
+            pupil=eye.get_editor_property('pupil');pupil.set_editor_property('dilation',value['pupil_dilation'])
+            eye.set_editor_property('pupil',pupil)
         settings.set_editor_property(name,eye)
     try:
         subsystem.commit_eyes_settings(character,settings)

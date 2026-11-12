@@ -466,10 +466,13 @@ class CM_OT_wrap(SafeExecute, bpy.types.Operator):
             from . import native_return
             native_return.conform(context)
             return
-        if f.wrap_method == 'AUTO' and not bpy.app.background:
+        if not bpy.app.background:
             from . import auto_wrap_jobs
-            if auto_wrap_jobs.needs_detection(context):
+            if not auto_wrap_jobs.publishing() and f.wrap_method=='AUTO' and auto_wrap_jobs.needs_detection(context):
                 auto_wrap_jobs.start(context,wrap=True)
+                return
+            if not auto_wrap_jobs.publishing():
+                auto_wrap_jobs.start_fit(context,guided=False,defer_wrinkles=self.defer_wrinkles)
                 return
         head_update = generated_head_update(s)
         if head_update:
@@ -487,6 +490,8 @@ class CM_OT_wrap(SafeExecute, bpy.types.Operator):
         mesh_ops.wrap(context, s)
         bpy.ops.cm.show_mesh(role="result")
         s.status = f"Wrapped. Surface RMS: {s.last_error:.6f} scene units. Inspect lips, eyes and inner surfaces."
+        if s.result.get('cm_wrap_recovery'):
+            s.status += ' Conservative recovery used; compare likeness before continuing.'
 
 
 class CM_OT_sculpt(SafeExecute, bpy.types.Operator):
@@ -615,9 +620,12 @@ class CM_OT_save(SafeExecute, bpy.types.Operator):
 
     def run(self, context, s):
         from . import project_images,skin_reconstruction
+        from . import resource_budget
+        root = Path(bpy.path.abspath(s.project_dir)).resolve()
+        budget=resource_budget.project_save_storage(context.scene)
+        resource_budget.require_disk('save character project',root,budget['required_bytes'])
         skin_reconstruction.restore_preview()
         working_images = project_images.working(context.scene)
-        root = Path(bpy.path.abspath(s.project_dir)).resolve()
         from . import wrinkles
         wrinkles.refresh_source_state(context,s,context.scene.cm_features)
         root.mkdir(parents=True, exist_ok=True)

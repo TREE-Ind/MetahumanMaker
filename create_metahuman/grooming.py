@@ -156,6 +156,22 @@ def groom_arrays(payload, scale):
     return lengths, positions, widths, groups, guides, uv, colors, settings
 
 
+def remember_native_roots(context,obj,native_roots):
+    """Retain exact native anchors across Blender's centimeter conversion."""
+    original=np.asarray(native_roots,dtype=float);roots=original.astype(np.float32)
+    if roots.shape!=(len(obj.data.curves),3) or not np.isfinite(roots).all():raise ValueError('Native groom roots must be finite float32 positions')
+    unit=context.scene.unit_settings.scale_length*100
+    offsets=np.empty(len(obj.data.curve_offset_data),np.int32);obj.data.curve_offset_data.foreach_get('value',offsets)
+    local=np.empty((len(obj.data.points),3),np.float32);obj.data.position_data.foreach_get('vector',local.ravel())
+    expected=(original/[unit,-unit,unit]).astype(np.float32)
+    if not np.array_equal(local[offsets[:-1]],expected):raise ValueError('The imported groom roots changed before native anchor caching')
+    for name,values in (('cm_native_root_position',roots),('cm_import_root_position',expected)):
+        attribute=obj.data.attributes.get(name) or obj.data.attributes.new(name,'FLOAT_VECTOR','CURVE')
+        if attribute.domain!='CURVE' or attribute.data_type!='FLOAT_VECTOR':raise ValueError('Native groom root cache attributes have an incompatible type')
+        attribute.data.foreach_set('vector',values.ravel())
+    obj['cm_native_root_unit']=float(unit);obj['cm_native_root_matrix']=json.dumps(np.asarray(obj.matrix_world).tolist())
+
+
 def import_curves(context, payload, name="Imported_Groom"):
     arrays = groom_arrays(payload, context.scene.unit_settings.scale_length * 100)
     lengths, points, widths, groups, guides, uv, colors, settings = arrays
@@ -176,6 +192,7 @@ def import_curves(context, payload, name="Imported_Groom"):
                 attribute = data.attributes.new('groom_color', 'FLOAT_COLOR', 'POINT')
                 attribute.data.foreach_set('color', colors.ravel())
             obj = bpy.data.objects.new(name, data)
+            remember_native_roots(context,obj,[curve['points'][0] for curve in payload['curves']])
             if settings:
                 obj['cm_groom_unreal_groups'] = settings
             (context.collection or context.scene.collection).objects.link(obj)
@@ -233,6 +250,13 @@ def export_curves(context, objects):
             points = np.empty((len(data.points), 3), dtype=np.float64)
             data.position_data.foreach_get('vector', points.ravel())
             world = (points @ matrix[:3, :3].T + matrix[:3, 3]) * [unit, -unit, unit]
+            if (obj.get('cm_native_root_unit')==unit and obj.get('cm_native_root_matrix')
+                    and np.array_equal(matrix,np.asarray(json.loads(obj['cm_native_root_matrix'])))
+                    and data.attributes.get('cm_native_root_position') and data.attributes.get('cm_import_root_position')):
+                original=curve_attribute(data,'cm_import_root_position','CURVE',('FLOAT_VECTOR',),count,0,width=3)
+                native=curve_attribute(data,'cm_native_root_position','CURVE',('FLOAT_VECTOR',),count,0,width=3)
+                unchanged=np.all(points[offsets[:-1]]==original,axis=1)
+                world[offsets[:-1][unchanged]]=native[unchanged]
             if not np.isfinite(world).all():
                 raise ValueError(obj.name + ': groom contains non-finite evaluated positions')
             group_ids = curve_attribute(data, 'groom_group_id', 'CURVE', ('INT',), count, 0)
@@ -339,7 +363,7 @@ def copy_mix_materials(context, objects, combined):
     attribute.data.foreach_set('value',indices)
 
 
-def select_population(context, groom, population):
+def select_population(context, groom, population, group_id=None):
     """Select whole native curves from transport guide flags, without reshaping."""
     if population not in {'GUIDES', 'STRANDS', 'ALL'}:
         raise ValueError('Choose guides, render strands or all hair')
@@ -352,14 +376,19 @@ def select_population(context, groom, population):
     if not count:
         raise ValueError('Add strands before selecting hair')
     selected = np.ones(count, dtype=bool)
+    if group_id is not None:
+        if type(group_id) is not int or group_id < 0:
+            raise ValueError('Choose a nonnegative native groom group ID')
+        groups = curve_attribute(data, 'groom_group_id', 'CURVE', ('INT',), count, 0)
+        selected &= groups == group_id
     if population != 'ALL':
         guides = curve_attribute(data, 'groom_guide', 'CURVE', ('INT', 'BOOLEAN'), count, 0)
         if np.any((guides != 0) & (guides != 1)):
             raise ValueError('Guide flags must be 0 or 1')
-        selected = guides == (1 if population == 'GUIDES' else 0)
+        selected &= guides == (1 if population == 'GUIDES' else 0)
     total = int(np.count_nonzero(selected))
     if not total:
-        raise ValueError('This groom has no ' + ('guides' if population == 'GUIDES' else 'render strands'))
+        raise ValueError('No matching hair curves in this population' + (f' and group {group_id}' if group_id is not None else ''))
     if data.users > 1:
         if context.mode != 'OBJECT':
             raise ValueError('Finish Hair, then select the population again to keep linked copies independent')
@@ -378,7 +407,45 @@ def select_population(context, groom, population):
     return total, count
 
 
+def remove_selected_curves(context, groom):
+    """Remove whole selected curves on a private copy, retaining all survivors."""
+    if context.mode != 'OBJECT':raise ValueError('Finish Hair before removing selected curves')
+    if not groom or groom.type != 'CURVES' or not groom.is_editable or not groom.data.is_editable:
+        raise ValueError('Choose an editable Hair Curves groom')
+    data=groom.data;count=len(data.curves)
+    selection=data.attributes.get('.selection')
+    if not selection or selection.domain!='CURVE' or selection.data_type!='BOOLEAN':
+        raise ValueError('Select whole hair curves with Guides, Strands or All first')
+    selected=np.empty(count,bool);selection.data.foreach_get('value',selected)
+    ids=np.flatnonzero(selected)
+    if not len(ids):raise ValueError('Select curves to remove first')
+    if len(ids)==count:raise ValueError('Keep at least one curve; choose a group or smaller selection')
+    from . import resource_budget
+    resource_budget.require('remove selected groom curves',len(data.points)*64+64*resource_budget.MIB)
+    private=data.copy()
+    try:
+        private.remove_curves(indices=ids.tolist())
+        if len(private.curves)!=count-len(ids):raise ValueError('Groom curve removal was incomplete')
+        groom.data=private
+    except Exception:
+        bpy.data.hair_curves.remove(private);raise
+    if not data.users:bpy.data.hair_curves.remove(data)
+    context.view_layer.update()
+    return dict(removed_curves=len(ids),retained_curves=len(private.curves))
+
+
 def draw_population_selection(layout):
+    g=bpy.context.scene.cm_groom
+    layout.prop(g,'selection_group_enabled')
+    if g.selection_group_enabled:
+        layout.prop(g,'selection_group')
+        groom=g.groom
+        if groom and groom.type=='CURVES':
+            attribute=groom.data.attributes.get('groom_group_id')
+            if attribute and attribute.domain=='CURVE' and attribute.data_type=='INT':
+                values=np.empty(len(groom.data.curves),np.int32);attribute.data.foreach_get('value',values)
+                ids=np.unique(values)
+                layout.label(text='Available: '+', '.join(str(v) for v in ids[:16])+(' ...' if len(ids)>16 else ''))
     row = layout.row(align=True)
     for label, population in [('Guides', 'GUIDES'), ('Strands', 'STRANDS'), ('All', 'ALL')]:
         row.operator('cm.groom', text=label).action = 'SELECT_' + population
@@ -673,6 +740,67 @@ def import_head(context, path):
     return setup_head(context,scalp)
 
 
+def draw_crown_shape(layout,context):
+    g=context.scene.cm_groom
+    if g.wardrobe_slot!='Hair':return
+    header,body=layout.panel('cm_crown_shape',default_closed=True)
+    header.label(text='Crown Shape')
+    if body:
+        body.enabled=context.mode=='OBJECT' and bool(g.groom and g.groom.type=='CURVES')
+        body.prop(g,'crown_lift');body.prop(g,'crown_lean')
+        if g.crown_lean:body.prop(g,'crown_direction')
+        body.operator('cm.groom',text='Apply Crown Shape').action='CROWN_LIFT'
+        body.label(text='Root anchors stay fixed. Undo reverses each application.')
+
+
+def shape_crown_lift(context,groom,scale,*,lean=0.,direction=(0.,1.,0.)):
+    """Shape crown lift and sweep in world space around exact strand roots."""
+    if context.mode!='OBJECT':raise ValueError('Finish Hair before adjusting crown lift')
+    if not groom or groom.type!='CURVES' or not len(groom.data.curves):raise ValueError('Choose an editable Hair Curves groom')
+    if not np.isfinite(scale) or not .1<=scale<=2:raise ValueError('Choose crown lift between 0.1 and 2')
+    direction=np.asarray(direction,dtype=float)
+    if not np.isfinite(lean) or not -60<=lean<=60:raise ValueError('Choose crown lean between -60 and 60 degrees')
+    if direction.shape!=(3,) or not np.isfinite(direction).all():raise ValueError('Choose a finite crown sweep direction')
+    direction=direction.copy();direction[2]=0
+    if lean and np.linalg.norm(direction)<1e-8:raise ValueError('Crown sweep needs a horizontal direction')
+    if np.linalg.norm(direction)>0:direction/=np.linalg.norm(direction)
+    if scale==1 and lean==0:return dict(changed_points=0,roots_preserved=True)
+    from . import resource_budget
+    data=groom.data
+    resource_budget.require('shape groom crown',len(data.points)*160+len(data.curves)*96+64*resource_budget.MIB)
+    offsets=np.empty(len(data.curve_offset_data),np.int32);data.curve_offset_data.foreach_get('value',offsets)
+    lengths=np.diff(offsets)
+    if np.any(lengths<2):raise ValueError('Every strand needs at least two points')
+    points=np.empty((len(data.points),3),np.float64);data.position_data.foreach_get('vector',points.ravel())
+    if not np.isfinite(points).all():raise ValueError('Groom contains non-finite positions')
+    matrix=np.asarray(groom.matrix_world,dtype=np.float64)[:3,:3]
+    inverse_up=np.linalg.solve(matrix,np.array([0.,0.,1.]))
+    roots=points[offsets[:-1]];height=roots@matrix[2]
+    span=float(np.ptp(height))
+    if span<1e-8:raise ValueError('Crown shaping needs roots distributed over the scalp')
+    weight=np.clip(((height-height.min())/span-.35)/.30,0,1);weight=weight*weight*(3-2*weight)
+    indices=np.repeat(np.arange(len(lengths)),lengths)
+    lift=(points-roots[indices])@matrix[2]
+    candidate=points+((scale-1)*weight[indices]*lift)[:,None]*inverse_up
+    # Only positive lift sweeps: hanging lengths retain their existing route.
+    # The direction is horizontal in world space, independent of object scale.
+    if lean:
+        sweep=np.linalg.solve(matrix,direction)
+        candidate+=(np.tan(np.deg2rad(lean))*weight[indices]*np.maximum(lift,0))[:,None]*sweep
+    candidate[offsets[:-1]]=roots
+    private=data.copy()
+    try:
+        private.position_data.foreach_set('vector',candidate.ravel())
+        actual=np.empty_like(points);private.position_data.foreach_get('vector',actual.ravel())
+        if not np.array_equal(actual[offsets[:-1]],roots):raise ValueError('Crown shaping changed a root anchor')
+        changed=int(np.any(actual!=points,axis=1).sum())
+        private['cm_crown_lift']=float(scale);private['cm_crown_lean']=float(lean);groom.data=private
+    except Exception:
+        bpy.data.hair_curves.remove(private);raise
+    if not data.users:bpy.data.hair_curves.remove(data)
+    return dict(changed_points=changed,roots_preserved=True,curves=len(lengths),crown_lift=float(scale),crown_lean=float(lean))
+
+
 class CM_OT_import_groom_head(bpy.types.Operator,ImportHelper):
     bl_idname='cm.import_groom_head'
     bl_label='Import Grooming Head (FBX)'
@@ -702,6 +830,23 @@ def region_changed(settings, context):
 
 
 class CM_GroomSettings(bpy.types.PropertyGroup):
+    replacement_component: StringProperty(name='Actor Groom Component',default='',description='Leave blank to use the Creator Section name, such as Hair; enter a custom existing actor component name when needed')
+    replacement_origin: StringProperty(name='Replacement Review Folder',subtype='DIR_PATH')
+    replacement_result: StringProperty()
+    replacement_group_defaults: bpy.props.BoolProperty(name='Use Incoming Group Settings',default=False,description='Use the pushed groom asset settings instead of carrying component-level width, shadow and other group overrides from the existing hair')
+    clearance_head: PointerProperty(name='Collider Head',type=bpy.types.Object)
+    clearance_region: EnumProperty(name='Clearance Region',items=[('EARS','Ears','Native ear weights or CM_Ears'),('HEAD','Whole Head','All head surfaces'),('CUSTOM','Vertex Group','A weighted collision region')],default='EARS')
+    clearance_group: StringProperty(name='Collision Group',default='CM_Ears')
+    clearance_route: EnumProperty(name='Hair Route',items=[('SURFACE','Nearest Surface','Resolve sampled penetration against nearby surfaces'),('TUCK_EARS','Behind Ears','Guide strands beyond the rear ear surface along the selected head-local direction')],default='SURFACE')
+    clearance_back_axis: FloatVectorProperty(name='Head-local Back Direction',size=3,default=(0,1,0),subtype='DIRECTION',description='Direction toward the back of the head in the collider object local space; standard native heads use +Y')
+    clearance_mm: FloatProperty(name='Clearance (mm)',default=.12,min=0,max=5)
+    clearance_root_mm: FloatProperty(name='Protect Root Length (mm)',default=1.,min=0,max=20)
+    clearance_offset_mm: FloatProperty(name='Maximum Movement (mm)',default=30.,min=.1,max=100)
+    clearance_length: FloatProperty(name='Length Change Limit',default=.15,min=0,max=1,subtype='FACTOR')
+    clearance_accept_partial: bpy.props.BoolProperty(name='Accept Partial Repair',default=False,description='Explicitly apply a bounded proposal with remaining sampled violations for local visual review')
+    clearance_receipt: StringProperty(subtype='FILE_PATH')
+    clearance_status: StringProperty()
+    clearance_report: StringProperty(options={'HIDDEN'})
     groom: PointerProperty(name="Groom", type=bpy.types.Object)
     scalp: PointerProperty(name="Scalp", type=bpy.types.Object)
     main_scalp: PointerProperty(name='Full Head Scalp', type=bpy.types.Object)
@@ -714,6 +859,14 @@ class CM_GroomSettings(bpy.types.PropertyGroup):
     exchange_receipt: StringProperty(subtype='FILE_PATH')
     exchange_result: StringProperty()
     last_push_result: StringProperty()
+    fit_lod_meshes: bpy.props.BoolProperty(name='Fit Cards to Strand Edits',default=True,
+        description='Fit private imported card and helmet meshes to position-only strand edits using the configured numerical Python; failed fits retain reported strand LOD fallbacks')
+    simulation_policy: EnumProperty(name='Push Physics',default='SOURCE',items=[
+        ('SOURCE','Keep Captured Settings','Retain captured per-group physics and LOD overrides; newly authored hair uses Unreal defaults'),
+        ('STATIC','Static','Disable simulation for every group and authored LOD on the new revision'),
+        ('RODS','Groom Rods','Enable the built-in rods solver for every group and authored LOD on the new revision'),
+        ('SPRINGS','Groom Springs','Enable the built-in springs solver for every group and authored LOD on the new revision')],
+        description='Only the new pushed revision changes; existing source assets retain their physics. Review motion and collision in Unreal')
     exchange_applied: StringProperty()
     lash_fit_receipt: StringProperty(subtype='FILE_PATH')
     lash_fit_result: StringProperty()
@@ -737,6 +890,12 @@ class CM_GroomSettings(bpy.types.PropertyGroup):
                ('Eyelashes', 'Eyelashes', '')],
     )
     simplify_ratio: FloatProperty(name="Keep Strands", default=0.5, min=0.01, max=1)
+    crown_lift: FloatProperty(name='Crown Lift',default=1.,min=.1,max=2.,description='Scale upper scalp strands vertically around fixed roots; below 1 lowers a tall crown')
+    crown_lean: FloatProperty(name='Crown Sweep',default=0.,min=-60.,max=60.,description='Sweep upward crown lengths horizontally, in degrees; roots and hanging lengths stay fixed')
+    crown_direction: FloatVectorProperty(name='Sweep Direction',default=(0.,1.,0.),subtype='DIRECTION',description='World direction for crown sweep; vertical component is ignored. Positive Y is behind a standard imported head')
+    selection_group_enabled: bpy.props.BoolProperty(name='Filter Selection by Group',default=False)
+    selection_group: IntProperty(name='Groom Group ID',default=0,min=0,
+        description='Select only this imported groom group; guides and render strands keep their separate populations')
     hair_length: FloatProperty(
         name="Initial Hair Length", default=0.04, min=0.0001, max=2
     )
@@ -759,6 +918,43 @@ class CM_GroomSettings(bpy.types.PropertyGroup):
     )
 
 
+class CM_OT_recover_groom_review(bpy.types.Operator,ImportHelper):
+    """Link a saved groom review without changing Blender or Unreal assets"""
+    bl_idname='cm.recover_groom_review'
+    bl_label='Recover Saved Groom Review'
+    filename_ext='.json'
+    filter_glob: StringProperty(default='preview.json',options={'HIDDEN'})
+    review: EnumProperty(name='Review',items=lambda self,context:getattr(self,'_recovery_items',[('BROWSE','Choose review file...','Browse for a saved preview.json')]))
+
+    def invoke(self,context,event):
+        from . import groom_jobs
+        try:choices=groom_jobs.find_replacement_reviews(context)
+        except OSError:choices=[]
+        self._recovery_paths={str(i):item['path'] for i,item in enumerate(choices)}
+        self._recovery_items=[(str(i),item['label'],item['description']) for i,item in enumerate(choices)]+[('BROWSE','Choose review file...','Browse for another saved preview.json')]
+        if choices:
+            self.filepath='';self.review='0';return context.window_manager.invoke_props_dialog(self,width=580)
+        return self.browse(context)
+
+    def browse(self,context):
+        self.filepath=str(Path(bpy.path.abspath(context.scene.cm_settings.project_dir))/'Grooms/.exchange')+'/'
+        context.window_manager.fileselect_add(self);return {'RUNNING_MODAL'}
+
+    def draw(self,context):
+        self.layout.prop(self,'review',text='Review')
+        self.layout.label(text='Unreal validates the saved sources before Keep or Restore.')
+
+    def execute(self,context):
+        from . import groom_jobs
+        try:
+            if not self.filepath:
+                if self.review=='BROWSE':return self.browse(context)
+                self.filepath=self._recovery_paths[self.review]
+            groom_jobs.recover_replacement(context,self.filepath);return {'FINISHED'}
+        except (OSError,ValueError,TypeError,KeyError,AttributeError) as exc:
+            self.report({'ERROR'},str(exc));return {'CANCELLED'}
+
+
 class CM_OT_groom(bpy.types.Operator):
     bl_idname = "cm.groom"
     bl_label = "Groom Action"
@@ -779,6 +975,8 @@ class CM_OT_groom(bpy.types.Operator):
             return 'Reduce each group and its guides separately; retain at least one strand per population and keep linked copies independent'
         if properties.action == 'PREVIEW':
             return 'Replace Blender preview shading on this groom; keep geometry, linked copies and Unreal exchange material settings'
+        if properties.action == 'CROWN_LIFT':
+            return 'Adjust crown height and horizontal sweep around fixed roots; keep widths, groups, guides and root UVs. Repeated applications accumulate; Undo restores the previous shape'
         if properties.action in {'SELECT_GUIDES', 'SELECT_STRANDS', 'SELECT_ALL'}:
             return 'Select whole guides, render strands or all hair for native brushes; keep guide flags, groups and attachment data'
         if properties.action=='EQUIP_CREATOR':
@@ -791,8 +989,13 @@ class CM_OT_groom(bpy.types.Operator):
             return 'Apply the last delivered groom and binding to one matching actor selected in Unreal; keep existing hair components and save the level afterward'
         if properties.action=='FIT_LASHES':
             return 'Fit a copy of the selected Unreal character lash groom to anatomical lid rims and preview it; keep the original groom and artist controls'
+        if properties.action=='REMOVE_SELECTED':
+            return 'Remove whole selected hair curves on a private data copy; linked grooms stay unchanged and Undo restores the curves'
         if properties.action=='KEEP_LASH_FIT':return 'Save the reviewed lash groom and binding in the character blueprint'
         if properties.action=='REVERT_LASH_FIT':return 'Restore the preceding actor lashes and any blueprint change made by this repair; preserve later artist edits'
+        if properties.action=='PREVIEW_REPLACE':return 'Preview the last pushed groom on the selected character existing component; keep the preceding groom and do not add duplicate hair'
+        if properties.action=='KEEP_REPLACE':return 'Save the reviewed groom in the existing character blueprint while preserving its material and group controls'
+        if properties.action=='RESTORE_REPLACE':return 'Restore the recorded preceding actor groom and any blueprint change made by this review; retain later artist edits'
         return 'Run the selected grooming action'
 
     def execute(self, context):
@@ -802,6 +1005,13 @@ class CM_OT_groom(bpy.types.Operator):
         )
         try:
             context.scene.cm_features.last_action_error = False
+            from . import groom_clearance
+            if self.action=='CANCEL_CLEARANCE':
+                groom_clearance.cancel();g.clearance_status='Clearance cancelled/discarded; original hair retained.';return {'FINISHED'}
+            if self.action in {'SOLVE_CLEARANCE','APPLY_CLEARANCE','REVERT_CLEARANCE','RESUME_CLEARANCE'}:
+                {'SOLVE_CLEARANCE':groom_clearance.start,'APPLY_CLEARANCE':groom_clearance.apply,'REVERT_CLEARANCE':groom_clearance.revert,'RESUME_CLEARANCE':groom_clearance.resume}[self.action](context)
+                return {'FINISHED'}
+            if groom_clearance.pending():raise ValueError('Apply or discard the original clearance proposal before other groom operations')
             if self.action in {'FIT_LASHES','KEEP_LASH_FIT','REVERT_LASH_FIT'}:
                 from . import groom_jobs
                 groom_jobs.start(context,self.action);return {'FINISHED'}
@@ -809,6 +1019,8 @@ class CM_OT_groom(bpy.types.Operator):
             if paint_tools.running():
                 raise ValueError('Apply or cancel Smart Paint before editing a groom')
             from . import groom_jobs
+            if self.action in {'PREVIEW_REPLACE','KEEP_REPLACE','RESTORE_REPLACE','CLOSE_REPLACE'}:
+                groom_jobs.start(context,self.action);return {'FINISHED'}
             if self.action == 'RESUME_EXCHANGE':
                 groom_jobs.resume(context)
                 return {'FINISHED'}
@@ -822,7 +1034,8 @@ class CM_OT_groom(bpy.types.Operator):
                 g.scalp_editing = False
                 return {'FINISHED'}
             if self.action in {'SELECT_GUIDES', 'SELECT_STRANDS', 'SELECT_ALL'}:
-                total, count = select_population(context, g.groom, self.action.removeprefix('SELECT_'))
+                total, count = select_population(context, g.groom, self.action.removeprefix('SELECT_'),
+                                                g.selection_group if g.selection_group_enabled else None)
                 s.status = 'Selected %d of %d hair curves. Native brushes affect the selection.' % (total, count)
                 return {'FINISHED'}
             if context.mode != 'OBJECT':
@@ -926,6 +1139,12 @@ class CM_OT_groom(bpy.types.Operator):
             elif self.action == "SIMPLIFY":
                 before, after = simplify_curves(g.groom, g.simplify_ratio)
                 s.status = 'Simplified %s: %d to %d strands. Groups and guides retained; linked copies unchanged.' % (g.groom.name, before, after)
+            elif self.action == 'REMOVE_SELECTED':
+                result=remove_selected_curves(context,g.groom)
+                s.status='Removed %d curves; retained %d. Undo restores the previous groom.' % (result['removed_curves'],result['retained_curves'])
+            elif self.action == 'CROWN_LIFT':
+                result=shape_crown_lift(context,g.groom,g.crown_lift,lean=g.crown_lean,direction=g.crown_direction)
+                s.status='Crown shape adjusted: '+str(result['changed_points'])+' points. Root anchors retained; review silhouette and scalp clearance before Push.'
                 return {'FINISHED'}
             elif self.action == "ALEMBIC":
                 if not g.groom:
@@ -957,6 +1176,47 @@ class CM_OT_groom(bpy.types.Operator):
             return {"CANCELLED"}
 
 
+def draw_replacement(layout,context):
+    from . import groom_jobs,unreal_jobs
+    g=context.scene.cm_groom;record={};delivered={}
+    if g.replacement_origin:
+        file=Path(bpy.path.abspath(g.replacement_origin))/'preview.json'
+        try:
+            if file.is_file():record=json.loads(file.read_text())
+        except (OSError,ValueError):pass
+    try:delivered=json.loads(g.last_push_result or g.exchange_result or '{}')
+    except ValueError:pass
+    active=record.get('mode') in {'PREPARING','PREVIEW','SAVING','SAVED','RESTORING'}
+    if not active:
+        row=layout.row();row.enabled=not groom_jobs.running() and not unreal_jobs.running()
+        row.operator('cm.recover_groom_review',text='Recover Saved Groom Review',icon='FILE_FOLDER')
+    if not active and not (delivered.get('status')=='complete' and delivered.get('groom') and delivered.get('binding')):return
+    box=layout.box();box.label(text='Replace Existing Character Groom',icon='OUTLINER_OB_CURVES')
+    box.enabled=not groom_jobs.running() and not unreal_jobs.running()
+    if active:
+        box.label(text='Component: '+record.get('component','Hair'))
+        if record.get('mode') in {'PREVIEW','SAVING'} and record.get('blueprint'):
+            box.operator('cm.groom',text='Save Groom in Blueprint',icon='FILE_TICK').action='KEEP_REPLACE'
+        box.operator('cm.groom',text='Restore Previous Groom',icon='LOOP_BACK').action='RESTORE_REPLACE'
+        try:failed=json.loads(g.exchange_result or '{}').get('status')=='failed'
+        except ValueError:failed=False
+        if failed or g.show_asset_paths:
+            box.operator('cm.groom',text='Close Review / Retain Current Edits',icon='CANCEL').action='CLOSE_REPLACE'
+        if record.get('mode')=='SAVED':
+            from .guided import text
+            text(box,'Saved in blueprint. Use Equip Groom in Creator to update its wardrobe too.')
+        if record.get('mode')=='SAVED' and delivered.get('status')=='complete' and delivered.get('binding') and (delivered.get('groom'),delivered.get('binding'))!=(record['after']['groom'],record['after']['binding']):
+            box.operator('cm.groom',text='Preview Next Replacement',icon='HIDE_OFF').action='PREVIEW_REPLACE'
+    else:
+        box.label(text='Select one character actor in Unreal.')
+        box.label(text='Replace: '+(g.replacement_component.strip() or g.wardrobe_slot))
+        box.operator('cm.groom',text='Preview Replacement on Character',icon='HIDE_OFF').action='PREVIEW_REPLACE'
+    if not active or (record.get('mode')=='SAVED' and (delivered.get('groom'),delivered.get('binding'))!=(record.get('after',{}).get('groom'),record.get('after',{}).get('binding'))):
+        box.prop(g,'replacement_group_defaults')
+    if g.show_asset_paths:
+        box.prop(g,'replacement_component');box.prop(g,'replacement_origin')
+
+
 def draw_lash_fit(layout,context):
     from . import groom_jobs,unreal_jobs
     g=context.scene.cm_groom;header,box=layout.panel('cm_native_lash_fit',default_closed=True);header.label(text='Repair Unreal Eyelashes',icon='OUTLINER_OB_CURVES')
@@ -973,6 +1233,34 @@ def draw_lash_fit(layout,context):
     if result.get('mode')=='PREVIEW':
         row=controls.row();row.enabled=bool(result.get('can_save_blueprint'));row.operator('cm.groom',text='Keep in Character Blueprint',icon='CHECKMARK').action='KEEP_LASH_FIT'
     if result.get('mode') in {'PREVIEW','SAVED'}:controls.operator('cm.groom',text='Restore Previous Lashes',icon='LOOP_BACK').action='REVERT_LASH_FIT'
+
+
+def draw_clearance(layout,context):
+    from . import groom_clearance
+    g=context.scene.cm_groom
+    box=layout.box();box.label(text='Surface Clearance · Local Proposal',icon='MOD_PHYSICS')
+    options=box.column();options.enabled=not groom_clearance.pending()
+    options.prop(g,'clearance_head');options.prop(g,'clearance_region')
+    options.prop(g,'clearance_route')
+    if g.clearance_route=='TUCK_EARS':options.prop(g,'clearance_back_axis')
+    if g.clearance_region=='CUSTOM':options.prop(g,'clearance_group')
+    for name in ('clearance_mm','clearance_root_mm','clearance_offset_mm','clearance_length'):options.prop(g,name)
+    box.label(text='Review strand placement after Apply; Revert restores geometry.')
+    if groom_clearance.ready():
+        import json
+        report=json.loads(g.clearance_report or '{}')
+        if report.get('unresolved_curves'):box.prop(g,'clearance_accept_partial')
+        row=box.row();row.enabled=not report.get('unresolved_curves') or g.clearance_accept_partial
+        row.operator('cm.groom',text='Apply Local Proposal',icon='CHECKMARK').action='APPLY_CLEARANCE'
+    elif not groom_clearance.pending():box.operator('cm.groom',text='Solve Clearance',icon='MOD_PHYSICS').action='SOLVE_CLEARANCE'
+    if groom_clearance.pending():box.operator('cm.groom',text='Cancel / Discard',icon='CANCEL').action='CANCEL_CLEARANCE'
+    elif g.clearance_receipt:box.operator('cm.groom',text='Resume Saved Proposal',icon='FILE_REFRESH').action='RESUME_CLEARANCE'
+    if g.groom and g.groom.get(groom_clearance.LAYERS):
+        row=box.row();row.enabled=not groom_clearance.pending()
+        row.operator('cm.groom',text='Revert Clearance Geometry',icon='LOOP_BACK').action='REVERT_CLEARANCE'
+    if g.clearance_status:
+        from .guided import text
+        text(box,g.clearance_status)
 
 
 class CM_PT_groom(bpy.types.Panel):
@@ -993,6 +1281,7 @@ class CM_PT_groom(bpy.types.Panel):
         g = context.scene.cm_groom
         l = self.layout
         draw_lash_fit(l,context)
+        draw_clearance(l,context)
         for prop in ("groom", "scalp", "name", "region", "hair_length", "hair_count", "hair_seed"):
             l.prop(g, prop)
         for label, action in [
@@ -1013,13 +1302,18 @@ class CM_PT_groom(bpy.types.Panel):
         l.operator('cm.import_groom_head',text='Import Head (FBX)',icon='FILE_FOLDER')
         l.prop(g, "simplify_ratio")
         draw_population_selection(l)
+        l.operator('cm.groom',text='Remove Selected Curves').action='REMOVE_SELECTED'
         l.operator("cm.groom", text="Simplify Groom").action = "SIMPLIFY"
+        draw_crown_shape(l,context)
         for prop in ('preview_color', 'preview_roughness', 'preview_strand_color'):
             l.prop(g, prop)
         l.operator('cm.groom', text='Apply Preview Material').action = 'PREVIEW'
         l.prop(g, "unreal_asset")
         l.prop(g, "unreal_target")
         l.prop(g, 'wardrobe_slot')
+        l.prop(g, 'fit_lod_meshes')
+        l.prop(g, 'simulation_policy')
+        l.label(text='Review hair motion in Unreal Simulate.')
         for label, action in [
             ("Grab Groom from Unreal", "GRAB"),
             ("Export Unreal Alembic", "ALEMBIC"),
@@ -1031,7 +1325,10 @@ class CM_PT_groom(bpy.types.Panel):
             l.operator("cm.groom", text=label).action = action
 
 
-CLASSES = (CM_GroomSettings, CM_OT_import_groom_head, CM_OT_groom, CM_PT_groom)
+        draw_replacement(l,context)
+
+
+CLASSES = (CM_GroomSettings, CM_OT_import_groom_head, CM_OT_recover_groom_review, CM_OT_groom, CM_PT_groom)
 
 
 def register():
@@ -1040,9 +1337,13 @@ def register():
     bpy.types.Scene.cm_groom = PointerProperty(type=CM_GroomSettings)
     from . import groom_jobs
     groom_jobs.register()
+    from . import groom_clearance
+    groom_clearance.register()
 
 
 def unregister():
+    from . import groom_clearance
+    groom_clearance.unregister()
     from . import groom_jobs
     groom_jobs.unregister()
     del bpy.types.Scene.cm_groom

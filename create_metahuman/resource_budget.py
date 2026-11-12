@@ -84,7 +84,7 @@ def require_disk(operation,path,minimum):
     except OSError as exc:raise ValueError('Could not read destination disk space before '+operation) from exc
     if free<minimum:
         raise ValueError(f'Not enough disk space for {operation}: allow about {minimum/GIB:.1f} GiB additional; '
-                         f'the destination volume has {free/GIB:.1f} GiB free. Free generated files or choose another Project Folder. The worker was not started.')
+                         f'the destination volume has {free/GIB:.1f} GiB free. Free generated files or choose another Project Folder. The operation was not started.')
     return {'available_disk_bytes':free,'required_disk_bytes':minimum,'checked_path':str(volume)}
 
 
@@ -96,3 +96,70 @@ def maps(size, objects=()):
     # justify lowering the whole-worker guard. Retain two more buffers at 8K.
     buffers=8 if int(size)>4096 else 6
     return 512 * MIB + buffers * int(size) ** 2 * 16 + meshes(objects)
+
+
+def scene_snapshot_storage(scene):
+    """Cheap disk estimate for a scene carrier, without mesh/pixel readback.
+
+    Packed images count their stored bytes; only generated/dirty image buffers
+    need a raw estimate. Clean external images stay external in the carrier.
+    The last saved file is an additional conservative size floor.
+    """
+    import bpy
+    geometry=meshes(scene.objects)
+    for obj in scene.objects:
+        if obj.type=='CURVES':geometry+=len(obj.data.points)*64+len(obj.data.curves)*64
+        elif obj.type=='CURVE':
+            geometry+=sum((len(spline.points)+len(spline.bezier_points))*128 for spline in obj.data.splines)
+    images=0
+    for image in bpy.data.images:
+        if image.source not in {'FILE','GENERATED','TILED'}:continue
+        packed=list(image.packed_files)
+        stored=sum(item.packed_file.size for item in packed)
+        images+=stored
+        if image.source=='GENERATED' or image.is_dirty:
+            tiles=max(1,len(image.tiles)) if image.source=='TILED' else 1
+            images+=int(image.size[0])*int(image.size[1])*max(4,image.channels)*(4 if image.is_float else 1)*tiles
+    saved=Path(bpy.data.filepath) if bpy.data.filepath else None
+    saved_bytes=saved.stat().st_size if saved and saved.is_file() else 0
+    return dict(scene_estimate_bytes=max(saved_bytes,geometry+images),geometry_estimate_bytes=geometry,
+                image_estimate_bytes=images,saved_file_bytes=saved_bytes,estimate=True)
+
+
+def project_save_storage(scene):
+    """Estimate a whole-file save, including images the save will pack."""
+    import bpy
+    snapshot=scene_snapshot_storage(scene)
+    geometry=meshes(bpy.data.objects)
+    for obj in bpy.data.objects:
+        if obj.type=='CURVES':geometry+=len(obj.data.points)*64+len(obj.data.curves)*64
+        elif obj.type=='CURVE':
+            geometry+=sum((len(spline.points)+len(spline.bezier_points))*128 for spline in obj.data.splines)
+    external=0
+    for image in bpy.data.images:
+        if not image.users or image.packed_file or image.is_dirty or image.source not in {'FILE','TILED'}:continue
+        path=Path(bpy.path.abspath(image.filepath)) if image.filepath else None
+        if image.source=='FILE' and path and path.is_file():external+=path.stat().st_size
+        elif image.source=='TILED':
+            external+=int(image.size[0])*int(image.size[1])*max(4,image.channels)*(4 if image.is_float else 1)*max(1,len(image.tiles))
+    carrier=max(snapshot['saved_file_bytes'],geometry+snapshot['image_estimate_bytes']+external)
+    return dict(required_bytes=2*carrier+256*MIB,scene_estimate_bytes=carrier,
+        geometry_estimate_bytes=geometry,external_image_estimate_bytes=external,estimate=True)
+
+
+def detail_update_storage(inputs, *, subdivide=False):
+    """NPZ carriers plus optional next-level meshes, before serializing arrays."""
+    objects=[];references=0;subdivision=0
+    for source,detail,reference in inputs:
+        objects.extend((source,detail))
+        objects.extend(getattr(reference,'objects',()))
+        references+=int(getattr(reference,'nbytes',0))
+        if subdivide:
+            # One Catmull-Clark step introduces an edge and face point. This
+            # also covers triangular/ngon input, whose growth can exceed 4V.
+            data=detail.data;count=len(data.vertices)+len(data.edges)+len(data.polygons)
+            keys=len(data.shape_keys.key_blocks) if data.shape_keys else 0
+            subdivision+=count*(192+24*keys)
+    carriers=meshes(objects)+references
+    return dict(required_bytes=2*carriers+2*subdivision+256*MIB,
+                carrier_estimate_bytes=carriers,subdivision_estimate_bytes=subdivision,estimate=True)

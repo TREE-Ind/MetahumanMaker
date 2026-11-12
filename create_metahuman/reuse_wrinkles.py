@@ -97,6 +97,12 @@ def binary_files(value):
             yield from binary_files(item)
 
 
+def file_digest(path):
+    """Hash reference buffers without loading each complete file into RAM."""
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream,'sha256').hexdigest()
+
+
 def resources(stage, project, character, state):
     pending = {}
     reference = state['reference']
@@ -108,16 +114,27 @@ def resources(stage, project, character, state):
             path = source.parent / relative
             if not path.is_file() or not path.resolve().is_relative_to(source.parent):
                 raise ValueError('Expression binary is missing or linked outside its library: ' + str(relative))
-            hashes[str(relative)] = hashlib.sha256(path.read_bytes()).hexdigest()
+            hashes[str(relative)] = file_digest(path)
         identity = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
         folder = Path('Expressions') / identity
-        for relative in files:
+        copies=[]
+        for relative in sorted(files):
             destination = folder / relative
             existing = project / destination
             if existing.resolve() != existing.absolute():
                 raise ValueError('Expression data must remain inside this project without linked paths')
-            if existing.is_file() and not existing.is_symlink() and hashlib.sha256(existing.read_bytes()).hexdigest() == hashes[str(relative)]:
+            if existing.is_file() and not existing.is_symlink() and file_digest(existing) == hashes[str(relative)]:
                 continue
+            copies.append((relative,destination,existing))
+        if copies:
+            from . import resource_budget
+            # New buffers are staged before publication; conflicting existing
+            # destinations also need rollback copies in the same transaction.
+            needed=sum((source.parent/relative).stat().st_size+
+                (existing.stat().st_size if existing.is_file() else 0)
+                for relative,_,existing in copies)+64*resource_budget.MIB
+            resource_budget.require_disk('reuse expression reference',project,needed)
+        for relative,destination,_ in copies:
             staged = stage / destination
             staged.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source.parent / relative, staged)

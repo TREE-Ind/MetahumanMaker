@@ -53,8 +53,19 @@ def checkpoint(unreal,actor,state):
     return dict(overrides=list(face.get_editor_property('override_materials')),look=json.loads(json.dumps(state.get('look'))),held=objects(unreal).get(state['origin']),info=info(unreal,actor))
 
 
+def assign_overrides(unreal,face,values):
+    """Restore slots without reconstructing the actor's Blueprint components."""
+    values=list(values);previous=list(face.get_editor_property('override_materials'))
+    # SetMaterial updates render state. An editor property notification can run
+    # construction scripts and destroy the components held by the live review.
+    for index in range(max(len(previous),len(values))):
+        face.set_material(index,values[index] if index<len(values) else None)
+    face.set_editor_property('override_materials',values,
+        notify_mode=unreal.PropertyAccessChangeNotifyMode.NEVER)
+
+
 def rollback(unreal,actor,state,snapshot):
-    face=face_component(unreal,actor);face.set_editor_property('override_materials',snapshot['overrides']);state['look']=snapshot['look']
+    face=face_component(unreal,actor);assign_overrides(unreal,face,snapshot['overrides']);state['look']=snapshot['look']
     if snapshot['held']:
         objects(unreal)[state['origin']]=snapshot['held'];material=snapshot['held']['preview']
         for key in [NORMAL,MICRO]:
@@ -67,7 +78,7 @@ def restore(unreal,actor,state):
     if not state.get('look'):return
     guard(unreal,actor,state);look=state['look'];held=objects(unreal)[state['origin']];face=face_component(unreal,actor);face.set_material(look['index'],held['before_override']);values=list(face.get_editor_property('override_materials'))
     while len(values)>look['before_array_length'] and values[-1] is None:values.pop()
-    face.set_editor_property('override_materials',values);state['look']=None;objects(unreal).pop(state['origin'],None)
+    assign_overrides(unreal,face,values);state['look']=None;objects(unreal).pop(state['origin'],None)
 
 
 def apply(unreal,actor,state,values):

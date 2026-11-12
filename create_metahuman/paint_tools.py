@@ -121,19 +121,20 @@ class CM_OT_reference_paint(bpy.types.Operator):
         point,normal,polygon,distance=self.session.bvh.ray_cast(origin,direction)
         if point is None:return None
         uv=self.session.uv_at(point,polygon)
-        return (point,*uv) if uv else None
+        return (point,polygon,*uv) if uv else None
 
     def paint(self,xy,erase):
         hit=self.sample(xy)
         if not hit:return
-        point,uv,triangle,triangle_uv=hit;self.session.stamp(uv,erase)
+        point,polygon,uv,triangle,triangle_uv=hit
+        self.session.stamp_surface(point,polygon,erase)
         if self.mirror:
             reflected=Vector(point);reflected.x=2*self.session.center[0]-reflected.x
             nearest=self.session.bvh.find_nearest(reflected)
             if nearest and nearest[0] is not None:
                 other=self.session.uv_at(nearest[0],nearest[2])
                 if other is not None and np.linalg.norm((other[0]-uv)*[self.session.width,self.session.height])>.5:
-                    self.session.stamp(other[0],erase)
+                    self.session.stamp_surface(nearest[0],nearest[2],erase)
 
     def draw_cursor(self):
         if not self.cursor or bpy.context.area!=self.area:return
@@ -144,12 +145,16 @@ class CM_OT_reference_paint(bpy.types.Operator):
         points=circle*18+self.cursor
         hit=self.sample(self.cursor)
         if hit:
-            _,uv,triangle,triangle_uv=hit
-            screen=[view3d_utils.location_3d_to_region_2d(self.region,self.area.spaces.active.region_3d,Vector(p)) for p in triangle]
+            _,_,uv,triangle,triangle_uv=hit
             texel=(triangle_uv[1:]-triangle_uv[0])*[self.session.width,self.session.height]
-            if all(p is not None for p in screen) and abs(np.linalg.det(texel))>1e-8:
-                transform=np.linalg.solve(texel,np.asarray(screen[1:])-np.asarray(screen[0]))
-                points=circle@transform*self.paint_radius+self.cursor
+            if abs(np.linalg.det(texel))>1e-8:
+                radius=self.paint_radius*np.sqrt(np.linalg.norm(np.cross(triangle[1]-triangle[0],triangle[2]-triangle[0]))/abs(np.linalg.det(texel)))
+                rv3d=self.area.spaces.active.region_3d
+                right=rv3d.view_rotation@Vector((1,0,0));up=rv3d.view_rotation@Vector((0,1,0))
+                center=hit[0]
+                screen=[view3d_utils.location_3d_to_region_2d(self.region,rv3d,
+                    Vector(center)+radius*(float(x)*right+float(y)*up)) for x,y in circle]
+                if all(p is not None for p in screen):points=np.asarray(screen)
         shader=gpu.shader.from_builtin('UNIFORM_COLOR')
         batch=batch_for_shader(shader,'LINE_STRIP',{'pos':points.tolist()})
         shader.bind();shader.uniform_float('color',(.15,.85,1,1));batch.draw(shader)

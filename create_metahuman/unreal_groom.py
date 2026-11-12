@@ -3,6 +3,7 @@
 from pathlib import Path
 import json
 import re
+import runpy
 
 
 GROUP_PROPERTIES = {
@@ -11,6 +12,63 @@ GROUP_PROPERTIES = {
     'interpolation': ('hair_groups_interpolation', 'HairGroupsInterpolation'),
     'lod': ('hair_groups_lod', 'HairGroupsLOD'),
 }
+OVERRIDE_OWNER='MetaHumanMaker.GroomOverrideOwner'
+
+MATERIAL_SOURCES='CreateMetaHuman.GroomMaterialSources'
+GROUP_SOURCES='CreateMetaHuman.GroomGroupSources'
+
+
+def _representations():
+    return runpy.run_path(str(Path(__file__).with_name('unreal_groom_representations.py')))
+
+
+def _sources(values):
+    """Validate portable material ancestry; never resolve or load its paths."""
+    if not isinstance(values,list):raise ValueError('Groom material sources must be a list')
+    result=[];seen=set()
+    for value in values:
+        if (not isinstance(value,dict) or set(value)!={'asset','slot','group'}
+                or not isinstance(value['asset'],str) or not value['asset'].startswith('/')
+                or not isinstance(value['slot'],str) or not value['slot']
+                or type(value['group']) is not int or value['group']<0):
+            raise ValueError('Groom material source needs a native asset path, slot and group index')
+        key=(value['asset'].casefold(),value['slot'].casefold(),value['group'])
+        if key not in seen:result.append(dict(value));seen.add(key)
+    return result
+
+
+def _source_key(value):return value['asset'].casefold(),value['slot'].casefold(),value['group']
+
+
+def _rendering_slot(text):
+    match=re.search(r'\bMaterialSlotName=("(?:\\.|[^"\\])*"|[^,)]+)',text)
+    if not match:raise ValueError('Groom rendering settings have no material slot')
+    token=match.group(1)
+    return (json.loads(token) if token.startswith('"') else token),match
+
+
+def _material_sources(groom):
+    import unreal
+    text=unreal.EditorAssetLibrary.get_metadata_tag(groom,MATERIAL_SOURCES)
+    if not text:return {}
+    data=json.loads(text)
+    if not isinstance(data,dict) or data.get('schema')!=1 or not isinstance(data.get('slots'),dict):
+        raise ValueError('Unsupported groom material provenance; grab and push this groom again')
+    return {str(slot).casefold():_sources(values) for slot,values in data['slots'].items()}
+
+
+def _slot_sources(groom):
+    """Material slots can serve multiple native rendering groups."""
+    inherited=_material_sources(groom);result={}
+    for index,group in enumerate(groom.get_editor_property('hair_groups_rendering')):
+        slot,_=_rendering_slot(group.export_text())
+        result.setdefault(slot.casefold(),[]).append(dict(asset=groom.get_path_name(),slot=slot,group=index))
+    for name in ('hair_groups_cards', 'hair_groups_meshes'):
+        for row in groom.get_editor_property(name):
+            slot,_=_rendering_slot(row.export_text())
+            result.setdefault(slot.casefold(),[]).append(dict(asset=groom.get_path_name(),slot=slot,group=int(row.get_editor_property('group_index'))))
+    for slot in set(result)|set(inherited):result[slot]=_sources(result.get(slot,[])+inherited.get(slot,[]))
+    return result
 
 
 def binding_settings(binding):
@@ -71,7 +129,126 @@ def copy_binding(binding,groom,target,destination):
     return fresh
 
 
-def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,expected_original,compile_blueprint=True,material_overrides=None):
+def revision_materials(component,groom):
+    """Map effective artist materials onto regrouped native strand slots."""
+    old=component.get_editor_property('groom_asset')
+    source=list(old.get_editor_property('hair_groups_materials'))
+    target=list(groom.get_editor_property('hair_groups_materials'))
+    overrides=list(component.get_editor_property('override_materials'))
+    source_origins=_slot_sources(old);target_origins=_material_sources(groom)
+    effective=[(overrides[i] if i<len(overrides) and overrides[i] else
+                source[i].get_editor_property('material') if i<len(source) and source[i].get_editor_property('material') else component.get_material(i))
+               for i in range(component.get_num_materials())]
+    if not target:
+        if len(effective)!=1:raise ValueError('Choose explicit materials for this groom without named slots')
+        return effective,[]
+    result=[];mapping=[]
+    for row in target:
+        name=str(row.get_editor_property('slot_name'));material=row.get_editor_property('material')
+        lineage=target_origins.get(name.casefold(),[]);ranked=[]
+        if lineage:
+            wanted={_source_key(value):rank for rank,value in enumerate(lineage)}
+            for i,item in enumerate(source):
+                origins=source_origins.get(str(item.get_editor_property('slot_name')).casefold(),[])
+                ranks=[wanted[_source_key(value)]+rank for rank,value in enumerate(origins) if _source_key(value) in wanted]
+                if ranks:ranked.append((min(ranks),i))
+            best=min((rank for rank,i in ranked),default=None)
+            candidates=[i for rank,i in ranked if rank==best]
+        else:
+            exact=[i for i,item in enumerate(source) if str(item.get_editor_property('slot_name')).casefold()==name.casefold()]
+            candidates=exact or [i for i,item in enumerate(source) if item.get_editor_property('material')==material]
+        if not candidates and material:
+            result.append(material);mapping.append(dict(slot=name,source_slots=[],material=material.get_path_name(),policy='TARGET_DEFAULT'));continue
+        choices={effective[i] for i in candidates if i<len(effective)}
+        if len(choices)!=1:
+            raise ValueError('Groom material slot '+name+' has no unambiguous artist-material match; supply explicit materials')
+        chosen=choices.pop();result.append(chosen)
+        mapping.append(dict(slot=name,source_slots=[str(source[i].get_editor_property('slot_name')) for i in candidates],material=chosen.get_path_name() if chosen else '',policy='SOURCE_PROVENANCE' if lineage else 'SOURCE_ASSIGNED'))
+    return result,mapping
+
+
+def _group_lineage(groom):
+    import unreal
+    api=_representations();project=api['project_path'](unreal)
+    raw=unreal.EditorAssetLibrary.get_metadata_tag(groom,GROUP_SOURCES)
+    groups={}
+    if raw:
+        data=json.loads(raw)
+        if data.get('schema')!=1 or not isinstance(data.get('groups'),dict):
+            raise ValueError('Unsupported groom group ancestry; grab the groom again')
+        groups=data['groups']
+    materials=_material_sources(groom)
+    rendering=list(groom.get_editor_property('hair_groups_rendering'))
+    result=[];known=[]
+    for index in range(len(groom.get_editor_property('hair_groups_info'))):
+        inherited=groups.get(str(index))
+        if inherited is None:
+            slot,_=_rendering_slot(rendering[index].export_text())
+            inherited=[dict(asset=value['asset'],group=value['group'],project=project)
+                       for value in materials.get(slot.casefold(),[])]
+        inherited=api['validate_sources'](inherited)
+        known.append(bool(inherited))
+        result.append(api['validate_sources']([dict(asset=groom.get_path_name(),group=index,project=project)]+inherited))
+    return result,known
+
+
+def _group_override_plan(source,target,known,payloads,policy='AUTO'):
+    """Resolve group identity independently of array order and shared shaders."""
+    if policy not in {'AUTO','TARGET_DEFAULTS'} or len(source)!=len(payloads) or len(target)!=len(known):
+        raise ValueError('Unsupported groom group override plan')
+    key=lambda value:(value['project'].replace('\\','/').casefold(),value['asset'].casefold(),value['group'])
+    result=[]
+    for index,lineage in enumerate(target):
+        if policy=='TARGET_DEFAULTS':
+            result.append(dict(group=index,source_groups=[],policy='EXPLICIT_INCOMING_SETTINGS'));continue
+        wanted={}
+        for rank,value in enumerate(lineage):wanted.setdefault(key(value),rank)
+        ranked=[]
+        for old,origins in enumerate(source):
+            ranks=[wanted[key(value)]+rank for rank,value in enumerate(origins) if key(value) in wanted]
+            if ranks:ranked.append((min(ranks),old))
+        best=min((rank for rank,old in ranked),default=None)
+        choices=[old for rank,old in ranked if rank==best]
+        if choices:
+            if len({payloads[old] for old in choices})!=1:
+                raise ValueError('Groom group '+str(index)+' has ambiguous artist controls. Enable Use Incoming Group Settings to preview without carrying those component overrides.')
+            result.append(dict(group=index,source_groups=choices,policy='SOURCE_PROVENANCE'))
+        elif not known[index] and index<len(source):
+            result.append(dict(group=index,source_groups=[index],policy='LEGACY_ORDERED'))
+        else:
+            result.append(dict(group=index,source_groups=[],policy='INCOMING_SETTINGS'))
+    return result
+
+
+def revision_group_overrides(component,groom,*,policy='AUTO',with_mapping=False):
+    """Carry whole authored descriptors by origin; new groups use the asset."""
+    import unreal
+    old=component.get_editor_property('groom_asset')
+    source,_=_group_lineage(old);target,known=_group_lineage(groom)
+    previous=list(component.get_editor_property('groom_groups_desc'))
+    descriptors=[previous[i].copy() if i<len(previous) else unreal.HairGroupDesc() for i in range(len(source))]
+    mapping=_group_override_plan(source,target,known,[v.export_text() for v in descriptors],policy)
+    values=[descriptors[row['source_groups'][0]].copy() if row['source_groups'] else unreal.HairGroupDesc() for row in mapping]
+    return (values,mapping) if with_mapping else values
+
+
+def blueprint_groom_template(blueprint,component_name):
+    """Read effective inherited defaults without creating an override."""
+    import unreal
+    native=getattr(getattr(unreal,'CreateMHGroomLibrary',None),'find_blueprint_groom_template',None)
+    if native:
+        component=native(blueprint,component_name)
+        if component:return component
+    subsystem=unreal.get_engine_subsystem(unreal.SubobjectDataSubsystem);data=unreal.SubobjectDataBlueprintFunctionLibrary
+    found=[]
+    for handle in subsystem.k2_gather_subobject_data_for_blueprint(blueprint):
+        value=data.get_object(data.get_data(handle))
+        if isinstance(value,unreal.GroomComponent) and value.get_name().removesuffix('_GEN_VARIABLE')==component_name and value not in found:found.append(value)
+    if len(found)!=1:raise ValueError('Choose exactly one named groom component in this assembly')
+    return found[0]
+
+
+def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,expected_original,compile_blueprint=True,material_overrides=None,group_policy='AUTO',override_token=''):
     """Persist a reviewed groom/binding pair on an owned assembled revision.
 
     Retains the component's material and rendering overrides unless replacement
@@ -84,43 +261,61 @@ def apply_owned_revision(blueprint,component_name,groom,binding,*,owner_folder,e
         raise ValueError('Choose a blueprint inside the owned character revision folder')
     if not isinstance(groom,unreal.GroomAsset) or not isinstance(binding,unreal.GroomBindingAsset) or binding.get_editor_property('groom')!=groom:
         raise ValueError('Choose a matching reviewed groom and binding')
-    subsystem=unreal.get_engine_subsystem(unreal.SubobjectDataSubsystem);data=unreal.SubobjectDataBlueprintFunctionLibrary;components=[]
-    for handle in subsystem.k2_gather_subobject_data_for_blueprint(blueprint):
-        value=data.get_object(data.get_data(handle))
-        if value not in components:components.append(value)
-    selected=[c for c in components if isinstance(c,unreal.GroomComponent) and c.get_name().removesuffix('_GEN_VARIABLE')==component_name]
-    if len(selected)!=1:raise ValueError('Choose exactly one named groom component in this assembly')
-    component=selected[0];old=component.get_editor_property('groom_asset');old_binding=component.get_editor_property('binding_asset');target=binding.get_editor_property('target_skeletal_mesh')
+    component=blueprint_groom_template(blueprint,component_name)
+    inherited=component.get_path_name().split('.')[0]!=blueprint.get_path_name().split('.')[0]
+    native=getattr(unreal,'CreateMHGroomLibrary',None)
+    if inherited and not all(hasattr(native,name) for name in ('ensure_local_blueprint_groom_template','remove_blueprint_groom_override')):
+        raise ValueError('Rebuild the matching bridge for safe inherited groom overrides')
+    if inherited and not override_token:
+        import uuid
+        override_token=uuid.uuid4().hex
+    component_source=component.get_path_name().split('.')[0]
+    old=component.get_editor_property('groom_asset');old_binding=component.get_editor_property('binding_asset');target=binding.get_editor_property('target_skeletal_mesh')
     if not old or old.get_path_name()!=expected_original or not old_binding or old_binding.get_editor_property('target_skeletal_mesh')!=target:
         raise ValueError('The artist groom or its rig changed since this revision was prepared')
-    materials=[component.get_material(i) for i in range(component.get_num_materials())]
+    expected,mapping=revision_materials(component,groom) if material_overrides is None else (list(material_overrides),[])
     old_overrides=list(component.get_editor_property('override_materials'))
+    old_groups=[v.copy() for v in component.get_editor_property('groom_groups_desc')]
+    groups,group_mapping=revision_group_overrides(component,groom,policy=group_policy,with_mapping=True)
     if material_overrides is not None and any(not isinstance(m,unreal.MaterialInterface) for m in material_overrides):
         raise ValueError('Explicit groom materials must be native material interfaces')
     protected={asset.get_path_name().split('.')[0] for asset in (old,old_binding,target)}
+    if inherited:protected.add(component_source)
     dirty=lambda:{p.get_path_name() for p in unreal.EditorLoadingAndSavingUtils.get_dirty_content_packages()}
     before=dirty();tag='CreateMetaHuman.GroomRevision.'+component_name;old_tag=library.get_metadata_tag(blueprint,tag)
     try:
-        blueprint.modify();component.modify()
+        blueprint.modify()
+        if inherited:
+            component=native.ensure_local_blueprint_groom_template(blueprint,component_name)
+            if not component or component.get_path_name().split('.')[0]!=blueprint.get_path_name().split('.')[0]:raise RuntimeError('Could not create a local groom override; parent retained')
+            library.set_metadata_tag(component,OVERRIDE_OWNER,override_token)
+        component.modify()
+        component.set_binding_asset(None)
+        never=unreal.PropertyAccessChangeNotifyMode.NEVER
+        component.set_editor_property('override_materials',expected,notify_mode=never)
+        component.set_editor_property('groom_groups_desc',groups,notify_mode=never)
         component.set_groom_asset(groom);component.set_binding_asset(binding)
-        if material_overrides is not None:component.set_editor_property('override_materials',list(material_overrides))
-        expected=materials if material_overrides is None else list(material_overrides)
-        if expected!=[component.get_material(i) for i in range(component.get_num_materials())]:raise RuntimeError('Groom revision did not retain the requested component materials')
+        if expected!=list(component.get_editor_property('override_materials')):raise RuntimeError('Groom revision did not retain the requested component material bindings')
+        if [v.export_text() for v in groups]!=[v.export_text() for v in component.get_editor_property('groom_groups_desc')]:raise RuntimeError('Groom revision did not retain the planned group controls')
         if compile_blueprint:unreal.BlueprintEditorLibrary.compile_blueprint(blueprint)
         if (dirty()-before)&protected:raise RuntimeError('Groom revision unexpectedly dirtied a shared source asset')
-        report=dict(status='complete',blueprint=blueprint.get_path_name(),component=component_name,previous_groom=old.get_path_name(),previous_binding=old_binding.get_path_name(),groom=groom.get_path_name(),binding=binding.get_path_name(),target=target.get_path_name(),source_assets_saved=0)
+        report=dict(status='complete',blueprint=blueprint.get_path_name(),component=component_name,local_override_created=inherited,previous_groom=old.get_path_name(),previous_binding=old_binding.get_path_name(),previous_material_overrides=[m.get_path_name() if m else '' for m in old_overrides],previous_group_overrides=[v.export_text() for v in old_groups],groom=groom.get_path_name(),binding=binding.get_path_name(),target=target.get_path_name(),material_slots=mapping,group_controls=group_mapping,group_policy=group_policy,source_assets_saved=0)
+        if inherited:report['local_override_token']=override_token
         library.set_metadata_tag(blueprint,tag,json.dumps(report))
         if not library.save_loaded_asset(blueprint,False):raise RuntimeError('Could not save the owned groom revision')
         return report
     except Exception:
         if old_tag:library.set_metadata_tag(blueprint,tag,old_tag)
         else:library.remove_metadata_tag(blueprint,tag)
-        # Compilation reinstantiates components; restore through fresh handles.
-        for handle in subsystem.k2_gather_subobject_data_for_blueprint(blueprint):
-            value=data.get_object(data.get_data(handle))
-            if isinstance(value,unreal.GroomComponent) and value.get_name().removesuffix('_GEN_VARIABLE')==component_name:
-                value.set_groom_asset(old);value.set_binding_asset(old_binding)
-                value.set_editor_property('override_materials',old_overrides)
+        # Never restore through a shared parent template after reconstruction.
+        value=blueprint_groom_template(blueprint,component_name)
+        if value.get_path_name().split('.')[0]==blueprint.get_path_name().split('.')[0]:
+            value.set_binding_asset(None)
+            value.set_editor_property('override_materials',old_overrides,notify_mode=unreal.PropertyAccessChangeNotifyMode.NEVER)
+            value.set_editor_property('groom_groups_desc',old_groups,notify_mode=unreal.PropertyAccessChangeNotifyMode.NEVER)
+            value.set_groom_asset(old);value.set_binding_asset(old_binding)
+            if inherited and not native.remove_blueprint_groom_override(blueprint,component_name,old,old_binding):
+                raise RuntimeError('Could not remove the failed local override; parent remains protected')
         if compile_blueprint:unreal.BlueprintEditorLibrary.compile_blueprint(blueprint)
         raise
 
@@ -183,18 +378,32 @@ def asset_settings(records):
     """Resolve shared deformation settings before creating any Unreal assets."""
     resolved = None
     for record in records:
+        if not isinstance(record,dict):raise ValueError('Groom group settings must be records')
+        if 'material_sources' in record:_sources(record['material_sources'])
+        if 'representation_sources' in record:_representations()['validate_sources'](record['representation_sources'])
+        if 'group_sources' in record:_representations()['validate_sources'](record['group_sources'])
         settings = record.get('asset_settings')
         if settings is None:  # Legacy strand files keep Unreal's defaults.
             continue
-        if not isinstance(settings, dict) or set(settings) != {
-                'enable_global_interpolation', 'enable_simulation_cache', 'hair_interpolation_type'}:
+        required={'enable_global_interpolation', 'enable_simulation_cache', 'hair_interpolation_type'}
+        optional={'lod_mode','auto_lod_bias'}
+        if (not isinstance(settings, dict) or not required.issubset(settings)
+                or set(settings)-required not in (set(),optional)):
             raise ValueError('Groom asset settings are incomplete or unsupported; grab the groom again')
+        settings=dict(settings)
+        settings.setdefault('lod_mode','DEFAULT');settings.setdefault('auto_lod_bias',0.)
+        if settings['lod_mode'] not in {'DEFAULT','MANUAL','AUTO'}:
+            raise ValueError('Unsupported groom LOD mode; grab the groom again')
+        import math
+        bias=settings['auto_lod_bias']
+        if type(bias) not in (int,float) or not math.isfinite(bias):
+            raise ValueError('Groom automatic LOD bias must be finite')
         if any(type(settings[key]) is not bool for key in ('enable_global_interpolation', 'enable_simulation_cache')):
             raise ValueError('Groom interpolation and simulation-cache flags must be boolean')
         if settings['hair_interpolation_type'] not in {'NONE', 'RIGID_TRANSFORM', 'OFFSET_TRANSFORM', 'SMOOTH_TRANSFORM'}:
             raise ValueError('Unsupported groom skinning mode; grab the groom again')
         if resolved is not None and resolved != settings:
-            raise ValueError('These grooms use different asset-wide deformation settings. Align Global Interpolation, Simulation Cache and Hair Interpolation Type in Unreal, then grab them again, or push them separately.')
+            raise ValueError('These grooms use different asset-wide deformation or LOD settings. Align interpolation, simulation-cache and LOD policies in Unreal, then grab them again, or push them separately.')
         resolved = settings
     return dict(resolved) if resolved is not None else {}
 
@@ -204,22 +413,47 @@ def export_settings(groom, group_ids):
     info = groom.get_editor_property('hair_groups_info')
     properties = {name: groom.get_editor_property(key) for name, (key, _) in GROUP_PROPERTIES.items()}
     materials = [item.export_text() for item in groom.get_editor_property('hair_groups_materials')]
+    inherited=_material_sources(groom)
+    representations=_representations()
+    group_lineage,_=_group_lineage(groom)
     shared = {key: bool(groom.get_editor_property(key)) for key in (
         'enable_global_interpolation', 'enable_simulation_cache')}
     shared['hair_interpolation_type'] = groom.get_editor_property('hair_interpolation_type').name
+    shared['lod_mode']=groom.get_editor_property('lod_mode').name
+    shared['auto_lod_bias']=float(groom.get_editor_property('auto_lod_bias'))
     if len(group_ids) != len(info):
         raise ValueError('Source strand groups do not match the native groom settings')
     return [dict(id=group_ids[index],
                  name=str(group.get_editor_property('group_name')),
                  materials=materials,
                  asset_settings=dict(shared),
+                 representation_sources=representations['export_sources'](groom,index),
+                 group_sources=group_lineage[index],
+                 material_sources=_sources([dict(asset=groom.get_path_name(),slot=_rendering_slot(properties['rendering'][index].export_text())[0],group=index)]
+                    +inherited.get(_rendering_slot(properties['rendering'][index].export_text())[0].casefold(),[])),
                  **{name: values[index].export_text() for name, values in properties.items()})
             for index, group in enumerate(info)]
 
 
-def apply_settings(groom, records, group_ids):
+def validate_simulation_policy(policy):
+    if policy not in {'SOURCE','STATIC','RODS','SPRINGS'}:
+        raise ValueError('Choose captured physics, static hair, Groom Rods or Groom Springs')
+    return policy
+
+
+def simulation_state(groom):
+    """Authored flags, not a claim that Niagara is ticking in this viewport."""
+    return [dict(group=index,
+        enabled=bool(value.get_editor_property('solver_settings').get_editor_property('enable_simulation')),
+        solver=str(value.get_editor_property('solver_settings').get_editor_property('niagara_solver')),
+        lod_overrides=[str(lod.get_editor_property('simulation')) for lod in groom.get_editor_property('hair_groups_lod')[index].get_editor_property('lods')])
+        for index,value in enumerate(groom.get_editor_property('hair_groups_physics'))]
+
+
+def apply_settings(groom, records, group_ids, simulation_policy='SOURCE'):
     import unreal
-    if not records:
+    validate_simulation_policy(simulation_policy)
+    if not records and simulation_policy=='SOURCE':
         return
     shared = asset_settings(records)
     # Apply before the group LOD array: its native property notification rebuilds
@@ -227,10 +461,12 @@ def apply_settings(groom, records, group_ids):
     for key, value in shared.items():
         if key == 'hair_interpolation_type':
             value = getattr(unreal.GroomInterpolationType, value)
+        elif key == 'lod_mode':
+            value = getattr(unreal.GroomLODMode,value)
         groom.set_editor_property(key, value)
     indexed = {int(record['id']): record for record in records}
     info = groom.get_editor_property('hair_groups_info')
-    materials = []
+    materials = [];provenance={}
     for label, (property_name, struct_name) in GROUP_PROPERTIES.items():
         values = list(groom.get_editor_property(property_name))
         for index, group in enumerate(info):
@@ -242,11 +478,7 @@ def apply_settings(groom, records, group_ids):
                 if label == 'rendering' and record.get('materials'):
                     # MaterialSlotName is a protected reflected property in 5.8.
                     # Native struct text exposes it without bypassing reflection.
-                    match = re.search(r'\bMaterialSlotName=("(?:\\.|[^"\\])*"|[^,)]+)', text)
-                    if not match:
-                        raise ValueError('Groom rendering settings have no material slot')
-                    token = match.group(1)
-                    slot = json.loads(token) if token.startswith('"') else token
+                    slot,match = _rendering_slot(text)
                     for text in record.get('materials', []):
                         material = unreal.HairGroupsMaterial()
                         material.import_text(text)
@@ -254,12 +486,29 @@ def apply_settings(groom, records, group_ids):
                             unique = 'CM_Group%d_%s' % (group_id, slot)
                             material.set_editor_property('slot_name', unique)
                             materials.append(material)
+                            if record.get('material_sources'):provenance[unique]=_sources(record['material_sources'])
                             text = record[label][:match.start(1)] + json.dumps(unique) + record[label][match.end(1):]
                             break
                     else:
                         text = record[label]
                 value.import_text(text)
                 values[index] = value
+        if simulation_policy!='SOURCE':
+            enabled=simulation_policy!='STATIC'
+            if label=='physics':
+                for value in values:
+                    solver=value.get_editor_property('solver_settings')
+                    solver.set_editor_property('enable_simulation',enabled)
+                    if enabled:
+                        solver.set_editor_property('niagara_solver',getattr(unreal.GroomNiagaraSolvers,
+                            'COSSERAT_RODS' if simulation_policy=='RODS' else 'ANGULAR_SPRINGS'))
+                    value.set_editor_property('solver_settings',solver)
+            elif label=='lod':
+                for value in values:
+                    lods=list(value.get_editor_property('lods'))
+                    for lod in lods:
+                        lod.set_editor_property('simulation',unreal.GroomOverrideType.ENABLE if enabled else unreal.GroomOverrideType.DISABLE)
+                    value.set_editor_property('lods',lods)
         # Whole-array physics/interpolation notifications refresh resources
         # without rebuilding their dependent interpolation bulk data in UE5.8.
         # Enabling simulation on a static groom can then assert in
@@ -273,6 +522,12 @@ def apply_settings(groom, records, group_ids):
                                       notify_mode=unreal.PropertyAccessChangeNotifyMode.NEVER)
     if materials:
         groom.set_editor_property('hair_groups_materials', materials)
+        if provenance:unreal.EditorAssetLibrary.set_metadata_tag(groom,MATERIAL_SOURCES,json.dumps(dict(schema=1,slots=provenance)))
+        else:unreal.EditorAssetLibrary.remove_metadata_tag(groom,MATERIAL_SOURCES)
+    ancestry={str(index):_representations()['validate_sources'](indexed.get(group_ids[index],{}).get('group_sources',[]))
+              for index in range(len(info)) if indexed.get(group_ids[index],{}).get('group_sources')}
+    if ancestry:unreal.EditorAssetLibrary.set_metadata_tag(groom,GROUP_SOURCES,json.dumps(dict(schema=1,groups=ancestry)))
+    else:unreal.EditorAssetLibrary.remove_metadata_tag(groom,GROUP_SOURCES)
 
 
 def library():
@@ -284,6 +539,32 @@ def library():
             "Install the compiled CreateMetaHumanBridge plugin matching UE 5.8 and restart Unreal"
         )
     return cls
+
+
+def prepare_strand_exchange_lods(groom):
+    """Keep static strand exchanges visible where source cards were omitted.
+
+    The strand writer does not transport card or mesh bulk geometry. Preserve
+    decimation, screen sizes and visibility while selecting strands for those
+    LODs. This is a reported fallback, not card/mesh geometry reconstruction.
+    """
+    import unreal
+    groups=[];changes=[]
+    available={kind:{(int(row.get_editor_property('group_index')),int(row.get_editor_property('lod_index')))
+                    for row in groom.get_editor_property(name)}
+               for kind,name in ((unreal.GroomGeometryType.CARDS,'hair_groups_cards'),(unreal.GroomGeometryType.MESHES,'hair_groups_meshes'))}
+    for group_index,source in enumerate(groom.get_editor_property('hair_groups_lod')):
+        group=source.copy();lods=[]
+        for lod_index,source_lod in enumerate(source.get_editor_property('lods')):
+            lod=source_lod.copy();kind=lod.get_editor_property('geometry_type')
+            if kind!=unreal.GroomGeometryType.STRANDS and (group_index,lod_index) not in available.get(kind,set()):
+                changes.append(dict(group=group_index,lod=lod_index,previous=kind.name,replacement='STRANDS'))
+                lod.set_editor_property('geometry_type',unreal.GroomGeometryType.STRANDS)
+            lods.append(lod)
+        group.set_editor_property('lods',lods);groups.append(group)
+    if changes:
+        groom.set_editor_property('hair_groups_lod',groups,notify_mode=unreal.PropertyAccessChangeNotifyMode.ALWAYS)
+    return changes
 
 
 def selected_asset(kind, *, details=None):
@@ -578,15 +859,22 @@ def equip_wardrobe(character_path, item_path, slot='Hair', *, open_editor=True):
     return report
 
 
-def import_groom(filename, destination, target_path, revision=False, character_path=''):
+def import_groom(filename, destination, target_path, revision=False, character_path='',lod_python='',simulation_policy='SOURCE'):
     import unreal
 
+    validate_simulation_policy(simulation_policy)
     data = json.loads(Path(filename).read_text(encoding='utf-8-sig'))
     # Conflicting settings in a blend cannot be represented by one GroomAsset.
     # Refuse before the native builder creates or saves a partial asset.
     asset_settings(data.get('group_settings', []))
-    prepared = character_target(character_path) if not target_path.strip() and character_path else None
-    target = unreal.load_asset(prepared['source_asset'] if prepared else target_path)
+    explicit=unreal.load_asset(target_path) if target_path.strip() else None
+    # A target prepared by this character is a snapshot, not a permanently
+    # valid head. Re-resolve its native geometry after Creator/head revisions.
+    # Explicit artist-owned targets and other characters' targets stay explicit.
+    owned=bool(explicit and character_path and
+        unreal.EditorAssetLibrary.get_metadata_tag(explicit,'CreateMH.GroomSourceCharacter')==character_path)
+    prepared = character_target(character_path) if character_path and (not target_path.strip() or owned) else None
+    target = unreal.load_asset(prepared['source_asset']) if prepared else explicit
     if not isinstance(target, unreal.SkeletalMesh):
         raise ValueError('Choose a valid target SkeletalMesh before pushing the groom')
     base = destination
@@ -605,10 +893,17 @@ def import_groom(filename, destination, target_path, revision=False, character_p
               'target': target.get_path_name()}
     if prepared:
         report['prepared_source'] = prepared
+        report['previous_target']=target_path
+        report['binding_target_refreshed']=bool(target_path and target.get_path_name()!=target_path)
     report_path = Path(filename).with_suffix('.unreal-report.json')
     report_path.write_text(json.dumps(report), encoding='utf-8')
-    apply_settings(groom, data.get('group_settings', []),
-                   list(dict.fromkeys(int(curve['group']) for curve in data['curves'])))
+    group_ids=list(dict.fromkeys(int(curve['group']) for curve in data['curves']))
+    records=data.get('group_settings', [])
+    apply_settings(groom, records, group_ids,simulation_policy)
+    report['simulation_policy']=simulation_policy
+    report['representations']=_representations()['restore'](groom,records,group_ids,_slot_sources,MATERIAL_SOURCES,
+        lod_python=lod_python,job_folder=Path(filename).parent)
+    report['strand_lod_fallbacks']=prepare_strand_exchange_lods(groom)
     unreal.EditorAssetLibrary.save_loaded_asset(groom)
     unreal.SystemLibrary.execute_console_command(None,'Editor.AsyncAssetCompilationFinishAll')
     binding = unreal.GroomLibrary.create_new_groom_binding_asset_with_path(
@@ -639,7 +934,7 @@ def import_groom(filename, destination, target_path, revision=False, character_p
     item.set_editor_property("pipeline", pipeline)
     unreal.EditorAssetLibrary.save_loaded_asset(item)
     report.update(wardrobe=item.get_path_name(), status='complete',
-                  groups=len(groom.get_editor_property('hair_groups_info')))
+                  groups=len(groom.get_editor_property('hair_groups_info')),simulation=simulation_state(groom))
     Path(filename).with_suffix(".unreal-report.json").write_text(
         json.dumps(report, indent=2)
     )
